@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "250738336886",
+    "project_id": "campandgo-ad09b",
+    "storage_bucket": "campandgo-ad09b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:250738336886:android:e94440323b6b553527eb57",
+        "android_client_info": {
+          "package_name": "com.tfg.campandgo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "250738336886-c8gk068bcbscd3e89c705elh893f6dpl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tfg.campandgo",
+            "certificate_hash": "ead7f05e67a71a9d6de6f77542352789e2c1607d"
+          }
+        },
+        {
+          "client_id": "250738336886-3tg9tk6mvr3o53l4tint2aemnbt5i0qc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvu3RbhzC7ty7KjC7-hWClkzdwd3Q67HA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "250738336886-3tg9tk6mvr3o53l4tint2aemnbt5i0qc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
