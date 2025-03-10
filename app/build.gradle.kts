@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.tfg.campandgo"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.tfg.campandgo"
