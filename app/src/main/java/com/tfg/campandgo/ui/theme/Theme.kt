@@ -1,6 +1,5 @@
 package com.tfg.campandgo.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,34 +8,39 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+    primary = Color(0xFF1E88E5), // Brighter blue
+    secondary = Color(0xFFBB86FC), // Purple accent
+    tertiary = Color(0xFF03DAC6), // Teal accent
+    background = Color(0xFF121212), // Dark background
+    surface = Color(0xFF1F1B24), // Surface slightly lighter than background
     onPrimary = Color.White,
     onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    onTertiary = Color.Black,
+    onBackground = Color.White,
+    onSurface = Color.White
+)
+
+// Light theme color palette
+private val LightColorScheme = lightColorScheme(
+    primary = Color(0xFF0288D1), // Soft blue
+    secondary = Color(0xFF03A9F4), // Light blue accent
+    tertiary = Color(0xFFFFC107), // Gold accent
+    background = Color(0xFFFFFFFF), // Pure white background
+    surface = Color(0xFFF5F5F5), // Light gray surface
+    onPrimary = Color.White,
+    onSecondary = Color.Black,
+    onTertiary = Color.Black,
+    onBackground = Color.Black,
+    onSurface = Color.Black
 )
 
 @Composable
 fun CampAndGoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -45,14 +49,14 @@ fun CampAndGoTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
 
+    // Apply Material 3 theme with custom color palette
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = Typography, // You can customize this further
         content = content
     )
 }
