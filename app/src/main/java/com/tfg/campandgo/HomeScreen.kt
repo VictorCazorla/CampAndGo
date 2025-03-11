@@ -15,6 +15,6 @@ fun HomeActivity() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "EN EL HOME", fontSize = 20.sp, modifier = Modifier.padding(16.dp))
+        Text(text = "EN EL HOME, MISHUEVOS", fontSize = 20.sp, modifier = Modifier.padding(16.dp))
     }
 }

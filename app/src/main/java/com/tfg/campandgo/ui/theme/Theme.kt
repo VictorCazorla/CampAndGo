@@ -24,7 +24,7 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = Color.White
 )
 
-// Light theme color palette
+
 private val LightColorScheme = lightColorScheme(
     primary = Color(0xFF0288D1), // Soft blue
     secondary = Color(0xFF03A9F4), // Light blue accent
@@ -53,10 +53,10 @@ fun CampAndGoTheme(
         else -> LightColorScheme
     }
 
-    // Apply Material 3 theme with custom color palette
+
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography, // You can customize this further
+        typography = Typography,
         content = content
     )
 }
