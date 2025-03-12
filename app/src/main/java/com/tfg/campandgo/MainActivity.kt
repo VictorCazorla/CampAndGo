@@ -38,15 +38,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         initializeGoogleSignIn()
         setContent {
-            CampAndGoTheme {
-                NavigatorHub(
+            CampAndGoTheme {            // Invoca el Theme
+                NavigatorHub(           // Invoca el @Composable administrador
                     onGoogleSignInClick = { startGoogleSignIn() }
                 )
             }
         }
     }
 
-    //Registro y login con google/correo+contraseña
+    /**
+     * Registro y login con google / correo + contraseña
+     */
     private fun initializeGoogleSignIn() {
         auth = Firebase.auth
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -89,11 +91,14 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-//Navegador entre pantallas
+/**
+ * Navegador entre pantallas
+ * Administra las pantallas del inicio navegando entre ellas
+ */
 @Composable
 fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
-    val navigator = rememberNavController()
+    val navigator = rememberNavController()         // Almacena en tiempo real los datos introducidos
+
     NavHost(navController = navigator, startDestination = "start") {
         composable("start") {
             StartScreen(
@@ -119,7 +124,10 @@ fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
     }
 }
 
-//Pantalla de inicio
+/**
+ * Estética de la pantalla de inicio
+ * Funcionalidad de los clicks
+ */
 @Composable
 fun StartScreen(
     onLoginClick: () -> Unit,
@@ -163,9 +171,17 @@ fun StartScreen(
     }
 }
 
-//Pantalla del login
+/**
+ * Estética de la pantalla de login
+ * Funcionalidad de los clicks
+ */
 @Composable
-fun LoginScreen(onLoginClick: () -> Unit, onRegisterClick: () -> Unit, onGoogleSignInClick: () -> Unit) {
+fun LoginScreen(
+    onLoginClick: () -> Unit,
+    onRegisterClick: () -> Unit,
+    onGoogleSignInClick: () -> Unit
+) {
+    // Variables donde se almacena la info
     var email by remember { mutableStateOf("")  }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -184,6 +200,7 @@ fun LoginScreen(onLoginClick: () -> Unit, onRegisterClick: () -> Unit, onGoogleS
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             value = password,
@@ -192,10 +209,12 @@ fun LoginScreen(onLoginClick: () -> Unit, onRegisterClick: () -> Unit, onGoogleS
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation()
         )
+
         Spacer(modifier = Modifier.height(16.dp))
         errorMessage?.let {
             Text(text = it, color = Color.Red, modifier = Modifier.padding(bottom = 8.dp))
         }
+
         Button(onClick = {
             auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
                 if (task.isSuccessful) onLoginClick() else errorMessage = task.exception?.message ?: "Login failed"
@@ -203,10 +222,12 @@ fun LoginScreen(onLoginClick: () -> Unit, onRegisterClick: () -> Unit, onGoogleS
         }, modifier = Modifier.fillMaxWidth()) {
             Text("Login")
         }
+
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = onGoogleSignInClick, modifier = Modifier.fillMaxWidth()) {
             Text("Sign in with Google")
         }
+
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = onRegisterClick) {
             Text("Don't have an account? Register")
@@ -214,7 +235,10 @@ fun LoginScreen(onLoginClick: () -> Unit, onRegisterClick: () -> Unit, onGoogleS
     }
 }
 
-//Pantalla del registro
+/**
+ * Estética de la pantalla de registro
+ * Funcionalidad de los clicks
+ */
 @Composable
 fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) {
     var email by remember { mutableStateOf("") }
@@ -235,6 +259,7 @@ fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) 
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             value = password,
@@ -243,10 +268,12 @@ fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) 
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation()
         )
+
         Spacer(modifier = Modifier.height(16.dp))
         errorMessage?.let {
             Text(text = it, color = Color.Red, modifier = Modifier.padding(bottom = 8.dp))
         }
+
         Button(onClick = {
             auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
                 if (task.isSuccessful) onRegisterClick() else errorMessage = task.exception?.message ?: "Registration failed"
@@ -254,6 +281,7 @@ fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) 
         }, modifier = Modifier.fillMaxWidth()) {
             Text("Register")
         }
+
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = onBackToLoginClick) {
             Text("Already have an account? Login")
