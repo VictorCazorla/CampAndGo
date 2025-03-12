@@ -51,6 +51,11 @@ android {
 }
 
 dependencies {
+
+    implementation ("androidx.compose.material:material-icons-extended:1.5.0") 
+
+
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.3.1"))
     implementation("com.google.firebase:firebase-auth-ktx")
@@ -68,6 +73,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.espresso.core)
+    implementation(libs.androidx.animation.core.lint)
 
     // Testing
     testImplementation(libs.junit)

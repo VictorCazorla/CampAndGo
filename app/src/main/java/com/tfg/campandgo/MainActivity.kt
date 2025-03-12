@@ -2,16 +2,19 @@ package com.tfg.campandgo
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
+import androidx.compose.material.icons.Icons
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
@@ -24,6 +27,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -38,15 +43,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         initializeGoogleSignIn()
         setContent {
-            CampAndGoTheme {
-                NavigatorHub(
+            CampAndGoTheme { // Invoca el Theme
+                NavigatorHub( // Invoca el @Composable administrador
                     onGoogleSignInClick = { startGoogleSignIn() }
                 )
             }
         }
     }
 
-    //Registro y login con google/correo+contraseña
+    /**
+     * Registro y login con google / correo + contraseña
+     */
     private fun initializeGoogleSignIn() {
         auth = Firebase.auth
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -55,10 +62,12 @@ class MainActivity : ComponentActivity() {
             .build()
         googleSignInClient = GoogleSignIn.getClient(this, gso)
     }
+
     private fun startGoogleSignIn() {
         val signInIntent = googleSignInClient.signInIntent
         startActivityForResult(signInIntent, RC_SIGN_IN)
     }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == RC_SIGN_IN) {
@@ -66,34 +75,36 @@ class MainActivity : ComponentActivity() {
             handleSignInResult(task)
         }
     }
+
     private fun handleSignInResult(task: Task<GoogleSignInAccount>) {
-        try {
-            val account = task.getResult(ApiException::class.java)
-            account?.idToken?.let { firebaseAuthWithGoogle(it) } ?: Log.e("GoogleSignIn", "Account is null")
-        } catch (e: ApiException) {
-            Log.e("GoogleSignIn", "Google Sign-In failed: ${e.statusCode}", e)
-        }
+        val account = task.getResult(ApiException::class.java)
+        account?.idToken?.let { firebaseAuthWithGoogle(it) }
     }
+
     private fun firebaseAuthWithGoogle(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential).addOnCompleteListener(this) { task ->
             if (task.isSuccessful) {
                 setContent { CampAndGoTheme { HomeActivity() } }
-            } else {
-                Log.e("GoogleSignIn", "Firebase Auth failed", task.exception)
             }
         }
     }
+
+
+
     companion object {
         private const val RC_SIGN_IN = 9001
     }
 }
 
-
-//Navegador entre pantallas
+/**
+ * Navegador entre pantallas
+ * Administra las pantallas del inicio navegando entre ellas
+ */
 @Composable
 fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
-    val navigator = rememberNavController()
+    val navigator = rememberNavController() // Almacena en tiempo real los datos introducidos
+
     NavHost(navController = navigator, startDestination = "start") {
         composable("start") {
             StartScreen(
@@ -115,11 +126,14 @@ fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
                 onBackToLoginClick = { navigator.popBackStack() }
             )
         }
-        composable("home") { HomeActivity() }   // Pantalla "home" ya definida en otro .kt
+        composable("home") { HomeActivity() } // Pantalla "home" ya definida en otro .kt
     }
 }
 
-//Pantalla de inicio
+/**
+ * Estética de la pantalla de inicio
+ * Funcionalidad de los clicks
+ */
 @Composable
 fun StartScreen(
     onLoginClick: () -> Unit,
@@ -163,12 +177,20 @@ fun StartScreen(
     }
 }
 
-//Pantalla del login
+/**
+ * Estética de la pantalla de login
+ * Funcionalidad de los clicks
+ */
 @Composable
-fun LoginScreen(onLoginClick: () -> Unit, onRegisterClick: () -> Unit, onGoogleSignInClick: () -> Unit) {
-    var email by remember { mutableStateOf("")  }
+fun LoginScreen(
+    onLoginClick: () -> Unit,
+    onRegisterClick: () -> Unit,
+    onGoogleSignInClick: () -> Unit
+) {
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isPasswordVisible by remember { mutableStateOf(false) } // Estado para la visibilidad de la contraseña
     val auth = Firebase.auth
 
     Column(
@@ -184,29 +206,60 @@ fun LoginScreen(onLoginClick: () -> Unit, onRegisterClick: () -> Unit, onGoogleS
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                    Icon(
+                        imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                        contentDescription = if (isPasswordVisible) "Hide password" else "Show password"
+                    )
+                }
+            }
         )
+
         Spacer(modifier = Modifier.height(16.dp))
         errorMessage?.let {
             Text(text = it, color = Color.Red, modifier = Modifier.padding(bottom = 8.dp))
         }
+
         Button(onClick = {
-            auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                if (task.isSuccessful) onLoginClick() else errorMessage = task.exception?.message ?: "Login failed"
+            if (email.isBlank() || password.isBlank()) {
+                errorMessage = "Please fill in all fields"
+            } else {
+                auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        onLoginClick()
+                    } else {
+                        when (task.exception) {
+                            is FirebaseAuthInvalidUserException -> {
+                                errorMessage = "No account found with this email."
+                            }
+                            is FirebaseAuthInvalidCredentialsException -> {
+                                errorMessage = "Invalid email or password."
+                            }
+                            else -> {
+                                errorMessage = "Login failed. Please check your email and password."
+                            }
+                        }
+                    }
+                }
             }
         }, modifier = Modifier.fillMaxWidth()) {
             Text("Login")
         }
+
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = onGoogleSignInClick, modifier = Modifier.fillMaxWidth()) {
             Text("Sign in with Google")
         }
+
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = onRegisterClick) {
             Text("Don't have an account? Register")
@@ -214,12 +267,18 @@ fun LoginScreen(onLoginClick: () -> Unit, onRegisterClick: () -> Unit, onGoogleS
     }
 }
 
-//Pantalla del registro
+/**
+ * Estética de la pantalla de registro
+ * Funcionalidad de los clicks
+ */
 @Composable
 fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordVerify by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isPasswordVisible by remember { mutableStateOf(false) } // Estado para la visibilidad de la contraseña
+    var isPasswordVerifyVisible by remember { mutableStateOf(false) } // Estado para la visibilidad de la confirmación de contraseña
     val auth = Firebase.auth
 
     Column(
@@ -235,25 +294,68 @@ fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) 
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(modifier = Modifier.height(8.dp))
         TextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
-            visualTransformation = PasswordVisualTransformation()
+            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                    Icon(
+                        imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = if (isPasswordVisible) "Hide password" else "Show password"
+                    )
+                }
+            }
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = passwordVerify,
+            onValueChange = { passwordVerify = it },
+            label = { Text("Repeat password") },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = if (isPasswordVerifyVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { isPasswordVerifyVisible = !isPasswordVerifyVisible }) {
+                    Icon(
+                        imageVector = if (isPasswordVerifyVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = if (isPasswordVerifyVisible) "Hide password" else "Show password"
+                    )
+                }
+            }
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
         errorMessage?.let {
             Text(text = it, color = Color.Red, modifier = Modifier.padding(bottom = 8.dp))
         }
+
         Button(onClick = {
-            auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                if (task.isSuccessful) onRegisterClick() else errorMessage = task.exception?.message ?: "Registration failed"
+            if (email.isBlank() || password.isBlank() || passwordVerify.isBlank()) {
+                errorMessage = "Please fill in all fields"
+            } else if (password != passwordVerify) {
+                errorMessage = "Passwords do not match"
+            } else if (password.length > 10) {
+                errorMessage = "Password must be under 10 characters"
+            } else if (!password.contains(Regex("\\d+"))) {
+                errorMessage = "Password must contain at least one digit."
+            } else {
+                auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        onRegisterClick()
+                    } else {
+                        errorMessage = "Registration failed. Please check the fields and try again."
+                    }
+                }
             }
         }, modifier = Modifier.fillMaxWidth()) {
             Text("Register")
         }
+
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = onBackToLoginClick) {
             Text("Already have an account? Login")
