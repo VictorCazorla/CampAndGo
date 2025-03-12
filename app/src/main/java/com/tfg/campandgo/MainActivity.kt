@@ -90,8 +90,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
-
     companion object {
         private const val RC_SIGN_IN = 9001
     }
@@ -242,7 +240,19 @@ fun LoginScreen(
                                 errorMessage = "No account found with this email."
                             }
                             is FirebaseAuthInvalidCredentialsException -> {
-                                errorMessage = "Invalid email or password."
+                                errorMessage = when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
+
+                                    "ERROR_INVALID_EMAIL" -> {
+                                        "The email address is badly formatted."
+                                    }
+
+                                    "ERROR_WRONG_PASSWORD" -> {
+                                        "Incorrect password. Please try again."
+                                    }
+                                    else -> {
+                                        "Invalid credentials. Please check your email and password."
+                                    }
+                                }
                             }
                             else -> {
                                 errorMessage = "Login failed. Please check your email and password."
@@ -348,7 +358,25 @@ fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) 
                     if (task.isSuccessful) {
                         onRegisterClick()
                     } else {
-                        errorMessage = "Registration failed. Please check the fields and try again."
+                        when (task.exception) {
+                            is FirebaseAuthInvalidCredentialsException -> {
+                                errorMessage = when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
+                                    "ERROR_INVALID_EMAIL" -> {
+                                        "The email address is badly formatted."
+                                    }
+
+                                    "ERROR_WRONG_PASSWORD" -> {
+                                        "Incorrect password. Please try again."
+                                    }
+                                    else -> {
+                                        "Invalid credentials. Please check your email and password."
+                                    }
+                                }
+                            }
+                            else -> {
+                                errorMessage = "Registration failed. Please check the fields and try again."
+                            }
+                        }
                     }
                 }
             }
