@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.gms.google-services") // Plugin de Google Services para Firebase
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -52,9 +52,18 @@ android {
 
 dependencies {
 
-    implementation ("androidx.compose.material:material-icons-extended:1.5.0") 
+    // Iconos
+    implementation ("androidx.compose.material:material-icons-extended:1.5.0")
 
+    // Maps
+    implementation ("com.google.maps.android:maps-compose:2.11.4")
+    implementation ("com.google.android.gms:play-services-maps:18.1.0")
+    implementation ("com.google.android.gms:play-services-location:21.2.0")
+    implementation("com.google.android.libraries.places:places:3.4.0") // Places API
 
+    // Apis
+    implementation("com.squareup.retrofit2:retrofit:2.9.0") // Para llamadas a la API
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.3.1"))
@@ -65,8 +74,6 @@ dependencies {
     // AndroidX y Jetpack Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
@@ -75,6 +82,14 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.espresso.core)
     implementation(libs.androidx.animation.core.lint)
+    implementation(libs.places)
+
+    // Compose
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+
+    // Lifecycle
+    implementation(libs.androidx.lifecycle.runtime.ktx)
 
     // Testing
     testImplementation(libs.junit)

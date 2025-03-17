@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CampAndGo"
         tools:targetApi="31">
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDoTfuWhvzX90J8qKDowYOXR5FlNTq2chw" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -23,5 +26,7 @@
             </intent-filter>
         </activity>
     </application>
-
+    <uses-permission android:name="android.permission.INTERNET" tools:ignore="ManifestOrder" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 </manifest>

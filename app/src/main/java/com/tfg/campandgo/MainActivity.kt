@@ -1,5 +1,6 @@
 package com.tfg.campandgo
 
+import HomeScreen
 import android.content.Intent
 import android.os.Bundle
 import androidx.compose.material.icons.Icons
@@ -26,6 +27,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
+import com.google.android.libraries.places.api.Places
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
@@ -42,6 +44,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         initializeGoogleSignIn()
+        if (!Places.isInitialized()) {
+            Places.initialize(applicationContext, "YOUR_API_KEY")
+        }
+
         setContent {
             CampAndGoTheme { // Invoca el Theme
                 NavigatorHub( // Invoca el @Composable administrador
@@ -49,6 +55,7 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+
     }
 
     /**
@@ -85,7 +92,7 @@ class MainActivity : ComponentActivity() {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential).addOnCompleteListener(this) { task ->
             if (task.isSuccessful) {
-                setContent { CampAndGoTheme { HomeActivity() } }
+                setContent { CampAndGoTheme { HomeScreen() } }
             }
         }
     }
@@ -124,7 +131,7 @@ fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
                 onBackToLoginClick = { navigator.popBackStack() }
             )
         }
-        composable("home") { HomeActivity() } // Pantalla "home" ya definida en otro .kt
+        composable("home") { HomeScreen() } // Pantalla "home" ya definida en otro .kt
     }
 }
 
