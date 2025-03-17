@@ -2,6 +2,8 @@ package com.tfg.campandgo
 
 import android.content.Context
 import android.location.Geocoder
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -10,13 +12,20 @@ import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.Locale
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MapsViewModel : ViewModel() {
     var hasLocationPermission = mutableStateOf(false)
     var searchSuggestions = mutableStateListOf<Prediction>()
     var selectedLocation = mutableStateOf<LatLng?>(null)
+    var placeDetails = mutableStateOf<PlaceDetails?>(null)
     var errorMessage = mutableStateOf<String?>(null)
 
+    /**
+     * Función para buscar ubicaciones con autocomplete
+     */
     fun searchLocations(query: String, apiKey: String) {
         viewModelScope.launch {
             try {
@@ -35,6 +44,9 @@ class MapsViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Función para obtener detalles de una ubicación utilizando el placeId
+     */
     fun getLocationDetails(placeId: String, apiKey: String) {
         viewModelScope.launch {
             try {
@@ -54,6 +66,9 @@ class MapsViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Función para geocodificar una dirección a LatLng usando la API de Google
+     */
     fun geocodeAddress(address: String, context: Context, onResult: (LatLng?) -> Unit) {
         val geocoder = Geocoder(context, Locale.getDefault())
         try {
@@ -68,6 +83,66 @@ class MapsViewModel : ViewModel() {
         } catch (e: IOException) {
             e.printStackTrace()
             onResult(null)
+        }
+    }
+
+    fun geocodeResultAddress(address: String, context: Context, onResult: (GeocodeResult?) -> Unit) {
+        val apiKey = getApiKeyFromManifest(context) ?: ""
+        val call = RetrofitClient.geocodeService.getGeocodeDetails(address, apiKey)
+
+        call.enqueue(object : Callback<GeocodeResponse> {
+            override fun onResponse(call: Call<GeocodeResponse>, response: Response<GeocodeResponse>) {
+                if (response.isSuccessful) {
+                    val geocodeResponse = response.body()
+
+                    if (geocodeResponse?.results?.isNotEmpty() == true) {
+                        onResult(geocodeResponse.results[0])    // Retorna el primer resultado
+                    } else {
+                        onResult(null)
+                    }
+                } else {
+                    Toast.makeText(context, "Error en la geocodificación: ${response.message()}", Toast.LENGTH_SHORT).show()
+                    onResult(null)
+                }
+            }
+
+            override fun onFailure(call: Call<GeocodeResponse>, t: Throwable) {
+                Toast.makeText(context, "Error en la conexión: ${t.message}", Toast.LENGTH_SHORT).show()
+                onResult(null)
+            }
+        })
+    }
+
+    fun getApiKeyFromManifest(context: Context): String? {
+        val applicationInfo = context.applicationInfo
+        val metaData = applicationInfo.metaData
+        return metaData?.getString("com.google.android.geo.API_KEY")
+    }
+
+    /**
+     * Función para obtener detalles del lugar usando el placeId
+     */
+    fun getPlaceDetailsFromPlaceId(placeId: String, apiKey: String) {
+        viewModelScope.launch {
+            try {
+                if (placeId.isNotEmpty()) {
+                    Log.e("MapsViewModel", "placeId: $placeId - apiKey: $apiKey")
+
+                    val response = RetrofitClient.placesService.getPlaceDetails(placeId, apiKey)
+                    if (response.status == "OK") {
+                        placeDetails.value = response.result
+                    } else {
+                        errorMessage.value = "Error obteniendo detalles del lugar: ${response.status}"
+                        Log.e("MapsViewModel", "Error obteniendo detalles del lugar: ${response.status} - ${response.result}")
+                    }
+                } else {
+                    errorMessage.value = "placeId inválido: $placeId"
+                    Log.e("MapsViewModel", "placeId inválido: $placeId")
+                }
+            } catch (e: Exception) {
+                errorMessage.value = "Error en la solicitud: ${e.message}"
+                Log.e("MapsViewModel", "Excepción en getPlaceDetails: ${e.message}")
+            }
         }
     }
 }

@@ -6,7 +6,8 @@ data class GeocodeResponse(
 )
 
 data class GeocodeResult(
-    val geometry: Geometry
+    val geometry: Geometry,
+    val placeId: String
 )
 
 data class Geometry(

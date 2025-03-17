@@ -17,4 +17,10 @@ interface GooglePlacesService {
         @Query("address") address: String,
         @Query("key") key: String
     ): GeocodeResponse
+
+    @GET("maps/api/place/details/json")
+    suspend fun getPlaceDetails(
+        @Query("place_id") placeId: String,
+        @Query("key") apiKey: String
+    ): PlaceDetailsResponse
 }

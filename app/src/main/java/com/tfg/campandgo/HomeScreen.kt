@@ -28,6 +28,8 @@ import com.google.maps.android.compose.*
 import com.tfg.campandgo.MapsViewModel
 import com.tfg.campandgo.Prediction
 import android.location.Geocoder
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import java.io.IOException
 import java.util.Locale
@@ -119,6 +121,31 @@ private fun MapScreen(
         }
     }
 
+    /**
+     * Maneja los clics en el mapa
+     */
+    val handleMapClick: (LatLng) -> Unit = { latLng ->
+        viewModel.selectedLocation.value = latLng
+
+        // Obtiene de geocodeAddress los detalles sobre la ubicación
+        viewModel.geocodeResultAddress("${latLng.latitude},${latLng.longitude}", context) { geocodeResult ->
+            geocodeResult?.let {
+                val lat = it.geometry.location.lat
+                val lng = it.geometry.location.lng
+                Log.e("MapsViewModel", "Ubicación: Lat: $lat, Lng: $lng")
+                Toast.makeText(context, "Ubicación: Lat: $lat, Lng: $lng", Toast.LENGTH_LONG).show()
+
+                // Búsqueda del placeId
+                val placeId = geocodeResult.placeId
+                val apiKey = getApiKeyFromManifest(context) ?: ""
+                viewModel.getPlaceDetailsFromPlaceId(placeId, apiKey)  // Usamos el placeId
+            } ?: run {
+                Log.e("MapsViewModel", "Ubicación desconocida")
+                Toast.makeText(context, "Ubicación desconocida", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     LaunchedEffect(currentLocation) {
         currentLocation?.let {
             cameraPositionState.position = CameraPosition.fromLatLngZoom(it, 15f)
@@ -134,7 +161,8 @@ private fun MapScreen(
                 minZoomPreference = 10f,
                 maxZoomPreference = 20f
             ),
-            uiSettings = uiSettings
+            uiSettings = uiSettings,
+            onMapClick = handleMapClick         // Detectar el clic en el mapa
         ) {
             currentLocation?.let { location ->
                 Marker(
@@ -143,6 +171,22 @@ private fun MapScreen(
                     snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${"%.4f".format(location.longitude)}"
                 )
             }
+
+            // Marcador dibujado en el selectedLocation
+            viewModel.selectedLocation.value?.let { location ->
+                Marker(
+                    state = MarkerState(position = location),
+                    title = "Marcador",
+                    snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${"%.4f".format(location.longitude)}"
+                )
+            }
+        }
+
+        // Mostrar detalles del lugar
+        viewModel.placeDetails.value?.let { place ->
+            Text("Nombre: ${place.name}")
+            Text("Dirección: ${place.formatted_address}")
+            Text("Tipos: ${place.types?.joinToString() ?: "Desconocido"}")
         }
 
         SearchBarWithSuggestions(
