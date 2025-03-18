@@ -25,14 +25,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.*
 
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.Prediction
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
-
 
 @Composable
 fun HomeScreen() {
@@ -51,7 +48,7 @@ fun HomeScreen() {
     if (viewModel.hasLocationPermission.value) {
         LocationFetcher { location ->
             viewModel.selectedLocation.value = location
-            viewModel.fetchNearbyPlaces(location, apiKey)
+            viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey)
         }
     }
 
@@ -105,6 +102,7 @@ private fun MapScreen(
     val cameraPositionState = rememberCameraPositionState()
     val uiSettings = remember { MapUiSettings(zoomControlsEnabled = false) }
     val context = LocalContext.current
+    val apiKey = remember { getApiKeyFromManifest(context) }
     var showNearbyPlaces by remember { mutableStateOf(false) } // Estado para controlar la visibilidad
 
     // Función para centrar el mapa en la ubicación actual
@@ -119,6 +117,8 @@ private fun MapScreen(
         if (searchQuery.isNotEmpty()) {
             viewModel.geocodeAddress(searchQuery, context) { latLng ->
                 latLng?.let {
+                    viewModel.selectedLocation.value = it
+                    if (apiKey != null) viewModel.fetchNearbyPlaces(latLng, apiKey)
                     cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(it, 15f))
                 }
             }
@@ -130,24 +130,7 @@ private fun MapScreen(
      */
     val handleMapClick: (LatLng) -> Unit = { latLng ->
         viewModel.selectedLocation.value = latLng
-
-        // Obtiene de geocodeAddress los detalles sobre la ubicación
-        viewModel.geocodeResultAddress("${latLng.latitude},${latLng.longitude}", context) { geocodeResult ->
-            geocodeResult?.let {
-                val lat = it.geometry.location.lat
-                val lng = it.geometry.location.lng
-                Log.e("MapsViewModel", "Ubicación: Lat: $lat, Lng: $lng")
-                Toast.makeText(context, "Ubicación: Lat: $lat, Lng: $lng", Toast.LENGTH_LONG).show()
-
-                // Búsqueda del placeId
-                val placeId = geocodeResult.placeId
-                val apiKey = getApiKeyFromManifest(context) ?: ""
-                viewModel.getPlaceDetailsFromPlaceId(placeId, apiKey)  // Usamos el placeId
-            } ?: run {
-                Log.e("MapsViewModel", "Ubicación desconocida")
-                Toast.makeText(context, "Ubicación desconocida", Toast.LENGTH_SHORT).show()
-            }
-        }
+        if (apiKey != null) viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey)
     }
 
     LaunchedEffect(currentLocation) {
