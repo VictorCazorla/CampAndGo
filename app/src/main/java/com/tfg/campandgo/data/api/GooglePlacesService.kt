@@ -2,6 +2,7 @@ package com.tfg.campandgo.data.api
 
 import com.tfg.campandgo.data.model.AutocompleteResponse
 import com.tfg.campandgo.data.model.GeocodeResponse
+import com.tfg.campandgo.data.model.NearbySearchResponse
 import com.tfg.campandgo.data.model.PlaceDetailsResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
@@ -26,4 +27,13 @@ interface GooglePlacesService {
         @Query("place_id") placeId: String,
         @Query("key") apiKey: String
     ): PlaceDetailsResponse
+
+    @GET("maps/api/place/nearbysearch/json")
+    suspend fun nearbySearch(
+        @Query("location") location: String,
+        @Query("radius") radius: Int,
+        @Query("type") type: String,
+        @Query("key") key: String,
+        @Query("language") language: String = "es"
+    ): NearbySearchResponse
 }

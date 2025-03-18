@@ -12,6 +12,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.tfg.campandgo.data.api.RetrofitClient
 import com.tfg.campandgo.data.model.GeocodeResponse
 import com.tfg.campandgo.data.model.GeocodeResult
+import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.PlaceDetails
 import com.tfg.campandgo.data.model.Prediction
 import kotlinx.coroutines.launch
@@ -27,6 +28,7 @@ class MapsViewModel : ViewModel() {
     var selectedLocation = mutableStateOf<LatLng?>(null)
     var placeDetails = mutableStateOf<PlaceDetails?>(null)
     var errorMessage = mutableStateOf<String?>(null)
+    var nearbyPlaces = mutableStateListOf<Place>()
 
     /**
      * Función para buscar ubicaciones con autocomplete
@@ -147,6 +149,31 @@ class MapsViewModel : ViewModel() {
             } catch (e: Exception) {
                 errorMessage.value = "Error en la solicitud: ${e.message}"
                 Log.e("MapsViewModel", "Excepción en getPlaceDetails: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Función para buscar lugares cercanos (restaurantes, cafés, etc.)
+     */
+    fun fetchNearbyPlaces(location: LatLng, apiKey: String) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitClient.placesService.nearbySearch(
+                    location = "${location.latitude},${location.longitude}",
+                    radius = 1000,
+                    type = "restaurant",
+                    key = apiKey
+                )
+
+                if (response.status == "OK") {
+                    nearbyPlaces.clear()
+                    nearbyPlaces.addAll(response.results)
+                } else {
+                    errorMessage.value = "No se encontraron lugares cercanos."
+                }
+            } catch (e: Exception) {
+                errorMessage.value = "Error buscando lugares cercanos: ${e.message}"
             }
         }
     }
