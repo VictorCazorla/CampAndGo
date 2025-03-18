@@ -1,5 +1,8 @@
-package com.tfg.campandgo
+package com.tfg.campandgo.data.api
 
+import com.tfg.campandgo.data.model.AutocompleteResponse
+import com.tfg.campandgo.data.model.GeocodeResponse
+import com.tfg.campandgo.data.model.PlaceDetailsResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 

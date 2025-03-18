@@ -7,15 +7,22 @@ import androidx.compose.material.icons.Icons
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
@@ -49,18 +56,14 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            CampAndGoTheme { // Invoca el Theme
-                NavigatorHub( // Invoca el @Composable administrador
+            CampAndGoTheme {
+                NavigatorHub(
                     onGoogleSignInClick = { startGoogleSignIn() }
                 )
             }
         }
-
     }
 
-    /**
-     * Registro y login con google / correo + contraseña
-     */
     private fun initializeGoogleSignIn() {
         auth = Firebase.auth
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -102,13 +105,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/**
- * Navegador entre pantallas
- * Administra las pantallas del inicio navegando entre ellas
- */
 @Composable
 fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
-    val navigator = rememberNavController() // Almacena en tiempo real los datos introducidos
+    val navigator = rememberNavController()
 
     NavHost(navController = navigator, startDestination = "start") {
         composable("start") {
@@ -131,14 +130,43 @@ fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
                 onBackToLoginClick = { navigator.popBackStack() }
             )
         }
-        composable("home") { HomeScreen() } // Pantalla "home" ya definida en otro .kt
+        composable("home") { HomeScreen() }
     }
 }
 
-/**
- * Estética de la pantalla de inicio
- * Funcionalidad de los clicks
- */
+@Composable
+fun CustomButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = MaterialTheme.colorScheme.primary,
+    contentColor: Color = MaterialTheme.colorScheme.onPrimary,
+    icon: @Composable (() -> Unit)? = null
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = backgroundColor,
+            contentColor = contentColor
+        ),
+        shape = RoundedCornerShape(12.dp),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 8.dp,
+            pressedElevation = 4.dp
+        )
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            icon?.invoke()
+            if (icon != null) Spacer(modifier = Modifier.width(8.dp))
+            Text(text = text, fontSize = 16.sp)
+        }
+    }
+}
+
 @Composable
 fun StartScreen(
     onLoginClick: () -> Unit,
@@ -154,38 +182,46 @@ fun StartScreen(
     ) {
         Text(
             text = "Welcome to CampAndGo!",
-            fontSize = 24.sp,
-            modifier = Modifier.padding(bottom = 32.dp)
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .padding(bottom = 32.dp)
+                .fillMaxWidth()
         )
 
-        Button(
+        CustomButton(
+            text = "Login",
             onClick = onLoginClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        ) {
-            Text("Login")
-        }
+            backgroundColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        )
 
-        Button(
+        Spacer(modifier = Modifier.height(16.dp))
+
+        CustomButton(
+            text = "Login with Google",
             onClick = onGoogleSignInClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        ) {
-            Text("Login with Google")
-        }
+            backgroundColor = Color(0xFF4285F4),
+            contentColor = Color.White,
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Google Icon",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(onClick = onRegisterClick) {
-            Text("Don't have an account? Register")
+            Text("Don't have an account? Register", color = MaterialTheme.colorScheme.primary)
         }
     }
 }
 
-/**
- * Estética de la pantalla de login
- * Funcionalidad de los clicks
- */
 @Composable
 fun LoginScreen(
     onLoginClick: () -> Unit,
@@ -195,7 +231,7 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isPasswordVisible by remember { mutableStateOf(false) } // Estado para la visibilidad de la contraseña
+    var isPasswordVisible by remember { mutableStateOf(false) }
     val auth = Firebase.auth
 
     Column(
@@ -213,6 +249,7 @@ fun LoginScreen(
         )
 
         Spacer(modifier = Modifier.height(8.dp))
+
         TextField(
             value = password,
             onValueChange = { password = it },
@@ -230,72 +267,76 @@ fun LoginScreen(
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+
         errorMessage?.let {
             Text(text = it, color = Color.Red, modifier = Modifier.padding(bottom = 8.dp))
         }
 
-        Button(onClick = {
-            if (email.isBlank() || password.isBlank()) {
-                errorMessage = "Please fill in all fields"
-            } else {
-                auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        onLoginClick()
-                    } else {
-                        when (task.exception) {
-                            is FirebaseAuthInvalidUserException -> {
-                                errorMessage = "No account found with this email."
-                            }
-                            is FirebaseAuthInvalidCredentialsException -> {
-                                errorMessage = when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
-
-                                    "ERROR_INVALID_EMAIL" -> {
-                                        "The email address is badly formatted."
-                                    }
-
-                                    "ERROR_WRONG_PASSWORD" -> {
-                                        "Incorrect password. Please try again."
-                                    }
-                                    else -> {
-                                        "Invalid credentials. Please check your email and password."
+        CustomButton(
+            text = "Login",
+            onClick = {
+                if (email.isBlank() || password.isBlank()) {
+                    errorMessage = "Please fill in all fields"
+                } else {
+                    auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            onLoginClick()
+                        } else {
+                            when (task.exception) {
+                                is FirebaseAuthInvalidUserException -> {
+                                    errorMessage = "No account found with this email."
+                                }
+                                is FirebaseAuthInvalidCredentialsException -> {
+                                    errorMessage = when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
+                                        "ERROR_INVALID_EMAIL" -> "The email address is badly formatted."
+                                        "ERROR_WRONG_PASSWORD" -> "Incorrect password. Please try again."
+                                        else -> "Invalid credentials. Please check your email and password."
                                     }
                                 }
-                            }
-                            else -> {
-                                errorMessage = "Login failed. Please check your email and password."
+                                else -> {
+                                    errorMessage = "Login failed. Please check your email and password."
+                                }
                             }
                         }
                     }
                 }
+            },
+            backgroundColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        CustomButton(
+            text = "Sign in with Google",
+            onClick = onGoogleSignInClick,
+            backgroundColor = Color(0xFF4285F4),
+            contentColor = Color.White,
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Google Icon",
+                    modifier = Modifier.size(24.dp)
+                )
             }
-        }, modifier = Modifier.fillMaxWidth()) {
-            Text("Login")
-        }
+        )
 
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = onGoogleSignInClick, modifier = Modifier.fillMaxWidth()) {
-            Text("Sign in with Google")
-        }
+        Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
         TextButton(onClick = onRegisterClick) {
-            Text("Don't have an account? Register")
+            Text("Don't have an account? Register", color = MaterialTheme.colorScheme.primary)
         }
     }
 }
 
-/**
- * Estética de la pantalla de registro
- * Funcionalidad de los clicks
- */
 @Composable
 fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVerify by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isPasswordVisible by remember { mutableStateOf(false) } // Estado para la visibilidad de la contraseña
-    var isPasswordVerifyVisible by remember { mutableStateOf(false) } // Estado para la visibilidad de la confirmación de contraseña
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var isPasswordVerifyVisible by remember { mutableStateOf(false) }
     val auth = Firebase.auth
 
     Column(
@@ -313,6 +354,7 @@ fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) 
         )
 
         Spacer(modifier = Modifier.height(8.dp))
+
         TextField(
             value = password,
             onValueChange = { password = it },
@@ -330,6 +372,7 @@ fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) 
         )
 
         Spacer(modifier = Modifier.height(8.dp))
+
         TextField(
             value = passwordVerify,
             onValueChange = { passwordVerify = it },
@@ -347,53 +390,51 @@ fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) 
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+
         errorMessage?.let {
             Text(text = it, color = Color.Red, modifier = Modifier.padding(bottom = 8.dp))
         }
 
-        Button(onClick = {
-            if (email.isBlank() || password.isBlank() || passwordVerify.isBlank()) {
-                errorMessage = "Please fill in all fields"
-            } else if (password != passwordVerify) {
-                errorMessage = "Passwords do not match"
-            } else if (password.length > 10) {
-                errorMessage = "Password must be under 10 characters"
-            } else if (!password.contains(Regex("\\d+"))) {
-                errorMessage = "Password must contain at least one digit."
-            } else {
-                auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        onRegisterClick()
-                    } else {
-                        when (task.exception) {
-                            is FirebaseAuthInvalidCredentialsException -> {
-                                errorMessage = when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
-                                    "ERROR_INVALID_EMAIL" -> {
-                                        "The email address is badly formatted."
-                                    }
-
-                                    "ERROR_WRONG_PASSWORD" -> {
-                                        "Incorrect password. Please try again."
-                                    }
-                                    else -> {
-                                        "Invalid credentials. Please check your email and password."
+        CustomButton(
+            text = "Register",
+            onClick = {
+                if (email.isBlank() || password.isBlank() || passwordVerify.isBlank()) {
+                    errorMessage = "Please fill in all fields"
+                } else if (password != passwordVerify) {
+                    errorMessage = "Passwords do not match"
+                } else if (password.length > 10) {
+                    errorMessage = "Password must be under 10 characters"
+                } else if (!password.contains(Regex("\\d+"))) {
+                    errorMessage = "Password must contain at least one digit."
+                } else {
+                    auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            onRegisterClick()
+                        } else {
+                            when (task.exception) {
+                                is FirebaseAuthInvalidCredentialsException -> {
+                                    errorMessage = when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
+                                        "ERROR_INVALID_EMAIL" -> "The email address is badly formatted."
+                                        "ERROR_WRONG_PASSWORD" -> "Incorrect password. Please try again."
+                                        else -> "Invalid credentials. Please check your email and password."
                                     }
                                 }
-                            }
-                            else -> {
-                                errorMessage = "Registration failed. Please check the fields and try again."
+                                else -> {
+                                    errorMessage = "Registration failed. Please check the fields and try again."
+                                }
                             }
                         }
                     }
                 }
-            }
-        }, modifier = Modifier.fillMaxWidth()) {
-            Text("Register")
-        }
+            },
+            backgroundColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
         TextButton(onClick = onBackToLoginClick) {
-            Text("Already have an account? Login")
+            Text("Already have an account? Login", color = MaterialTheme.colorScheme.primary)
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.tfg.campandgo
+package com.tfg.campandgo.data.api
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

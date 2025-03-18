@@ -1,4 +1,4 @@
-package com.tfg.campandgo
+package com.tfg.campandgo.ui.viewmodel
 
 import android.content.Context
 import android.location.Geocoder
@@ -9,6 +9,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
+import com.tfg.campandgo.data.api.RetrofitClient
+import com.tfg.campandgo.data.model.GeocodeResponse
+import com.tfg.campandgo.data.model.GeocodeResult
+import com.tfg.campandgo.data.model.PlaceDetails
+import com.tfg.campandgo.data.model.Prediction
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.Locale

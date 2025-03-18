@@ -25,14 +25,13 @@ import com.google.android.gms.maps.model.LatLng
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.*
-import com.tfg.campandgo.MapsViewModel
-import com.tfg.campandgo.Prediction
-import android.location.Geocoder
+
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
-import java.io.IOException
-import java.util.Locale
+import com.tfg.campandgo.data.model.Prediction
+import com.tfg.campandgo.ui.viewmodel.MapsViewModel
+
 
 @Composable
 fun HomeScreen() {
@@ -231,7 +230,6 @@ private fun SearchBarWithSuggestions(
                 onClick = onSearch,
                 modifier = Modifier
                     .size(56.dp)
-                    .shadow(4.dp, shape = CircleShape)
                     .clip(CircleShape)
                     .background(
                         color = MaterialTheme.colorScheme.primaryContainer,
@@ -250,7 +248,6 @@ private fun SearchBarWithSuggestions(
                 onClick = onCenterMap,
                 modifier = Modifier
                     .size(56.dp)
-                    .shadow(4.dp, shape = CircleShape)
                     .clip(CircleShape)
                     .background(
                         color = MaterialTheme.colorScheme.primaryContainer,
@@ -299,16 +296,27 @@ private fun SuggestionItem(
         onClick = { onSuggestionSelected(prediction) },
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Text(
-                text = prediction.structured_formatting.main_text,
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Text(
-                text = prediction.structured_formatting.secondary_text,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = prediction.structured_formatting.main_text,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    text = prediction.structured_formatting.secondary_text,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
@@ -373,20 +381,6 @@ private fun LocationFetcher(onLocationFetched: (LatLng) -> Unit) {
     }
 }
 
-// Añade esta función en tu MapsViewModel
-fun geocodeAddress(address: String, context: Context, onResult: (LatLng?) -> Unit) {
-    val geocoder = Geocoder(context, Locale.getDefault())
-    try {
-        val addresses = geocoder.getFromLocationName(address, 1)
-        if (addresses?.isNotEmpty() == true) {
-            val location = addresses[0]
-            val latLng = LatLng(location.latitude, location.longitude)
-            onResult(latLng)
-        } else {
-            onResult(null)
-        }
-    } catch (e: IOException) {
-        e.printStackTrace()
-        onResult(null)
-    }
-}
+
+
+

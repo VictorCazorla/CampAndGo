@@ -1,4 +1,4 @@
-package com.tfg.campandgo
+package com.tfg.campandgo.data.model
 
 data class PlaceDetailsResponse(
     val result: PlaceDetails?,
