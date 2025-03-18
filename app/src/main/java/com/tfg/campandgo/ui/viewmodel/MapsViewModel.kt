@@ -3,24 +3,18 @@ package com.tfg.campandgo.ui.viewmodel
 import android.content.Context
 import android.location.Geocoder
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
 import com.tfg.campandgo.data.api.RetrofitClient
-import com.tfg.campandgo.data.model.GeocodeResponse
-import com.tfg.campandgo.data.model.GeocodeResult
 import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.PlaceDetails
 import com.tfg.campandgo.data.model.Prediction
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.Locale
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 class MapsViewModel : ViewModel() {
     var hasLocationPermission = mutableStateOf(false)
@@ -91,39 +85,6 @@ class MapsViewModel : ViewModel() {
             e.printStackTrace()
             onResult(null)
         }
-    }
-
-    fun geocodeResultAddress(address: String, context: Context, onResult: (GeocodeResult?) -> Unit) {
-        val apiKey = getApiKeyFromManifest(context) ?: ""
-        val call = RetrofitClient.geocodeService.getGeocodeDetails(address, apiKey)
-
-        call.enqueue(object : Callback<GeocodeResponse> {
-            override fun onResponse(call: Call<GeocodeResponse>, response: Response<GeocodeResponse>) {
-                if (response.isSuccessful) {
-                    val geocodeResponse = response.body()
-
-                    if (geocodeResponse?.results?.isNotEmpty() == true) {
-                        onResult(geocodeResponse.results[0])    // Retorna el primer resultado
-                    } else {
-                        onResult(null)
-                    }
-                } else {
-                    Toast.makeText(context, "Error en la geocodificación: ${response.message()}", Toast.LENGTH_SHORT).show()
-                    onResult(null)
-                }
-            }
-
-            override fun onFailure(call: Call<GeocodeResponse>, t: Throwable) {
-                Toast.makeText(context, "Error en la conexión: ${t.message}", Toast.LENGTH_SHORT).show()
-                onResult(null)
-            }
-        })
-    }
-
-    fun getApiKeyFromManifest(context: Context): String? {
-        val applicationInfo = context.applicationInfo
-        val metaData = applicationInfo.metaData
-        return metaData?.getString("com.google.android.geo.API_KEY")
     }
 
     /**
