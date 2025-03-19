@@ -41,14 +41,14 @@ fun HomeScreen() {
     if (viewModel.hasLocationPermission.value) {
         LocationFetcher { location ->
             viewModel.selectedLocation.value = location
-            viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey)
+            viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context)
         }
     }
 
     // Realizar búsqueda de ubicaciones cuando el texto de búsqueda tenga más de 2 caracteres
     LaunchedEffect(searchQuery) {
         if (searchQuery.length > 2) {
-            viewModel.searchLocations(searchQuery, apiKey)
+            viewModel.searchLocations(searchQuery, apiKey, context)
         }
     }
 
@@ -57,9 +57,8 @@ fun HomeScreen() {
         currentLocation = viewModel.selectedLocation.value,
         searchQuery = searchQuery,
         onSearchQueryChange = { searchQuery = it },
-        onSearch = { placeId -> viewModel.getLocationDetails(placeId, apiKey) },
+        onSearch = { placeId -> viewModel.getLocationDetails(placeId, apiKey, context) },
         searchSuggestions = viewModel.searchSuggestions,
-        errorMessage = viewModel.errorMessage.value,
         nearbyPlaces = viewModel.nearbyPlaces,
         viewModel = viewModel
     )

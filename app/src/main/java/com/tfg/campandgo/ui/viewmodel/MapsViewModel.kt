@@ -3,6 +3,7 @@ package com.tfg.campandgo.ui.viewmodel
 import android.content.Context
 import android.location.Geocoder
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -15,6 +16,7 @@ import com.tfg.campandgo.data.model.Prediction
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.Locale
+
 
 /**
  * ViewModel para gestionar la lógica relacionada con el mapa y las ubicaciones.
@@ -32,7 +34,6 @@ class MapsViewModel : ViewModel() {
     var searchSuggestions = mutableStateListOf<Prediction>()
     var selectedLocation = mutableStateOf<LatLng?>(null)
     var placeDetails = mutableStateOf<PlaceDetails?>(null)
-    var errorMessage = mutableStateOf<String?>(null)
     var nearbyPlaces = mutableStateListOf<Place>()
 
     /**
@@ -40,8 +41,9 @@ class MapsViewModel : ViewModel() {
      *
      * @param query El texto de búsqueda.
      * @param apiKey La API Key de Google Places.
+     * @param context El contexto de la aplicación para mostrar Toasts.
      */
-    fun searchLocations(query: String, apiKey: String) {
+    fun searchLocations(query: String, apiKey: String, context: Context) {
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.placesService.autocomplete(
@@ -52,9 +54,11 @@ class MapsViewModel : ViewModel() {
                 if (response.status == "OK") {
                     searchSuggestions.clear()
                     searchSuggestions.addAll(response.predictions)
+                } else {
+                    Toast.makeText(context, "No se encontraron sugerencias.", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                errorMessage.value = "Error buscando ubicaciones: ${e.message}"
+                Toast.makeText(context, "Error buscando ubicaciones: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -64,8 +68,9 @@ class MapsViewModel : ViewModel() {
      *
      * @param placeId El ID del lugar.
      * @param apiKey La API Key de Google Places.
+     * @param context El contexto de la aplicación para mostrar Toasts.
      */
-    fun getLocationDetails(placeId: String, apiKey: String) {
+    fun getLocationDetails(placeId: String, apiKey: String, context: Context) {
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.placesService.geocode(
@@ -77,9 +82,11 @@ class MapsViewModel : ViewModel() {
                     response.results.firstOrNull()?.geometry?.location?.let {
                         selectedLocation.value = LatLng(it.lat, it.lng)
                     }
+                } else {
+                    Toast.makeText(context, "Error obteniendo coordenadas.", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                errorMessage.value = "Error obteniendo coordenadas: ${e.message}"
+                Toast.makeText(context, "Error obteniendo coordenadas: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -100,10 +107,12 @@ class MapsViewModel : ViewModel() {
                 val latLng = LatLng(location.latitude, location.longitude)
                 onResult(latLng)
             } else {
+                Toast.makeText(context, "No se encontró la dirección.", Toast.LENGTH_SHORT).show()
                 onResult(null)
             }
         } catch (e: IOException) {
             e.printStackTrace()
+            Toast.makeText(context, "Error geocodificando la dirección: ${e.message}", Toast.LENGTH_SHORT).show()
             onResult(null)
         }
     }
@@ -113,8 +122,9 @@ class MapsViewModel : ViewModel() {
      *
      * @param placeId El ID del lugar.
      * @param apiKey La API Key de Google Places.
+     * @param context El contexto de la aplicación para mostrar Toasts.
      */
-    fun getPlaceDetailsFromPlaceId(placeId: String, apiKey: String) {
+    fun getPlaceDetailsFromPlaceId(placeId: String, apiKey: String, context: Context) {
         viewModelScope.launch {
             try {
                 if (placeId.isNotEmpty()) {
@@ -124,15 +134,15 @@ class MapsViewModel : ViewModel() {
                     if (response.status == "OK") {
                         placeDetails.value = response.result
                     } else {
-                        errorMessage.value = "Error obteniendo detalles del lugar: ${response.status}"
+                        Toast.makeText(context, "Error obteniendo detalles del lugar: ${response.status}", Toast.LENGTH_SHORT).show()
                         Log.e("MapsViewModel", "Error obteniendo detalles del lugar: ${response.status} - ${response.result}")
                     }
                 } else {
-                    errorMessage.value = "placeId inválido: $placeId"
+                    Toast.makeText(context, "placeId inválido: $placeId", Toast.LENGTH_SHORT).show()
                     Log.e("MapsViewModel", "placeId inválido: $placeId")
                 }
             } catch (e: Exception) {
-                errorMessage.value = "Error en la solicitud: ${e.message}"
+                Toast.makeText(context, "Error en la solicitud: ${e.message}", Toast.LENGTH_SHORT).show()
                 Log.e("MapsViewModel", "Excepción en getPlaceDetails: ${e.message}")
             }
         }
@@ -143,8 +153,9 @@ class MapsViewModel : ViewModel() {
      *
      * @param location La ubicación desde la cual buscar.
      * @param apiKey La API Key de Google Places.
+     * @param context El contexto de la aplicación para mostrar Toasts.
      */
-    fun fetchNearbyPlaces(location: LatLng, apiKey: String) {
+    fun fetchNearbyPlaces(location: LatLng, apiKey: String, context: Context) {
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.placesService.nearbySearch(
@@ -158,10 +169,10 @@ class MapsViewModel : ViewModel() {
                     nearbyPlaces.clear()
                     nearbyPlaces.addAll(response.results)
                 } else {
-                    errorMessage.value = "No se encontraron lugares cercanos."
+                    Toast.makeText(context, "No se encontraron lugares cercanos.", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                errorMessage.value = "Error buscando lugares cercanos: ${e.message}"
+                Toast.makeText(context, "Error buscando lugares cercanos: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

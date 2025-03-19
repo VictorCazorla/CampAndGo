@@ -34,7 +34,6 @@ fun SearchBarWithSuggestions(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     suggestions: List<Prediction>,
-    errorMessage: String?,
     onSuggestionSelected: (Prediction) -> Unit,
     onCenterMap: () -> Unit,
     onSearch: () -> Unit
@@ -85,14 +84,6 @@ fun SearchBarWithSuggestions(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-        }
-
-        errorMessage?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
         }
 
         if (suggestions.isNotEmpty()) {

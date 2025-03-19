@@ -52,7 +52,6 @@ fun MapScreen(
     onSearchQueryChange: (String) -> Unit,
     onSearch: (String) -> Unit,
     searchSuggestions: List<Prediction>,
-    errorMessage: String?,
     nearbyPlaces: List<Place>,
     viewModel: MapsViewModel
 ) {
@@ -76,7 +75,7 @@ fun MapScreen(
             viewModel.geocodeAddress(searchQuery, context) { latLng ->
                 latLng?.let {
                     viewModel.selectedLocation.value = it
-                    if (apiKey != null) viewModel.fetchNearbyPlaces(latLng, apiKey)
+                    if (apiKey != null) viewModel.fetchNearbyPlaces(latLng, apiKey, context)
                     cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(it, 15f))
                 }
             }
@@ -90,7 +89,7 @@ fun MapScreen(
      */
     val handleMapClick: (LatLng) -> Unit = { latLng ->
         viewModel.selectedLocation.value = latLng
-        if (apiKey != null) viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey)
+        if (apiKey != null) viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context)
     }
 
     // Actualizar la posición de la cámara cuando cambia la ubicación actual
@@ -151,7 +150,7 @@ fun MapScreen(
                                 // Mostrar detalles del lugar seleccionado
                                 selectedPlaceId = place.placeId // Actualizar el lugar seleccionado
                                 val apiKey = getApiKeyFromManifest(context) ?: ""
-                                viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey)
+                                viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey, context)
                                 true // Indica que el evento ha sido manejado
                             }
                         )
@@ -198,7 +197,7 @@ fun MapScreen(
                         // Obtener detalles del lugar seleccionado
                         selectedPlaceId = selectedPlace.placeId // Actualizar el lugar seleccionado
                         val apiKey = getApiKeyFromManifest(context) ?: ""
-                        viewModel.getPlaceDetailsFromPlaceId(selectedPlace.placeId, apiKey)
+                        viewModel.getPlaceDetailsFromPlaceId(selectedPlace.placeId, apiKey, context)
                     })
                 }
             }
@@ -209,7 +208,6 @@ fun MapScreen(
             searchQuery = searchQuery,
             onSearchQueryChange = onSearchQueryChange,
             suggestions = searchSuggestions,
-            errorMessage = errorMessage,
             onSuggestionSelected = { prediction ->
                 onSearch(prediction.place_id)
                 onSearchQueryChange(prediction.description)
