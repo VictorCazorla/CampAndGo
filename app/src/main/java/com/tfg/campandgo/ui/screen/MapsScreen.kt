@@ -12,12 +12,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.Prediction
 import com.tfg.campandgo.ui.component.NearbyPlaceItem
+import com.tfg.campandgo.ui.component.PlaceDetailsSection
 import com.tfg.campandgo.ui.component.SearchBarWithSuggestions
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
 
@@ -59,6 +61,7 @@ fun MapScreen(
     val context = LocalContext.current
     val apiKey = remember { getApiKeyFromManifest(context) }
     var showNearbyPlaces by remember { mutableStateOf(false) } // Estado para controlar la visibilidad
+    var selectedPlaceId by remember { mutableStateOf<String?>(null) } // Estado para rastrear el lugar seleccionado
 
     // Función para centrar el mapa en la ubicación actual
     val centerMap: () -> Unit = {
@@ -105,7 +108,8 @@ fun MapScreen(
             properties = MapProperties(
                 isMyLocationEnabled = true,
                 minZoomPreference = 10f,
-                maxZoomPreference = 20f
+                maxZoomPreference = 20f,
+                mapType = MapType.TERRAIN
             ),
             uiSettings = uiSettings,
             onMapClick = handleMapClick // Detectar el clic en el mapa
@@ -119,12 +123,12 @@ fun MapScreen(
                 )
             }
 
-            // Siempre mostrar el marcador del lugar seleccionado si existe
             viewModel.selectedLocation.value?.let { location ->
                 Marker(
                     state = MarkerState(position = location),
                     title = "Ubicación seleccionada",
-                    snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${"%.4f".format(location.longitude)}"
+                    snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${"%.4f".format(location.longitude)}",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE) // Cambia el color del marcador
                 )
             }
 
@@ -135,7 +139,21 @@ fun MapScreen(
                         Marker(
                             state = MarkerState(position = LatLng(location.lat, location.lng)),
                             title = place.name,
-                            snippet = place.vicinity
+                            snippet = place.vicinity,
+                            icon = if (place.placeId == selectedPlaceId) {
+                                // Marcador verde para el lugar seleccionado
+                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+                            } else {
+                                // Marcador predeterminado para otros lugares
+                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                            },
+                            onClick = { marker ->
+                                // Mostrar detalles del lugar seleccionado
+                                selectedPlaceId = place.placeId // Actualizar el lugar seleccionado
+                                val apiKey = getApiKeyFromManifest(context) ?: ""
+                                viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey)
+                                true // Indica que el evento ha sido manejado
+                            }
                         )
                     }
                 }
@@ -144,16 +162,18 @@ fun MapScreen(
 
         // Mostrar detalles del lugar seleccionado
         viewModel.placeDetails.value?.let { place ->
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Nombre: ${place.name}")
-                Text("Dirección: ${place.formatted_address}")
-                Text("Tipos: ${place.types?.joinToString() ?: "Desconocido"}")
-            }
+            PlaceDetailsSection(place = place)
         }
 
         // Botón para mostrar/ocultar la lista de lugares cercanos
         Button(
-            onClick = { showNearbyPlaces = !showNearbyPlaces }, // Cambia el estado
+            onClick = {
+                showNearbyPlaces = !showNearbyPlaces // Cambia el estado
+                if (!showNearbyPlaces) {
+                    viewModel.placeDetails.value = null // Limpiar la información del lugar seleccionado
+                    selectedPlaceId = null // Limpiar el lugar seleccionado
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
@@ -176,6 +196,7 @@ fun MapScreen(
                             ?.let { cameraPositionState.move(it) }
 
                         // Obtener detalles del lugar seleccionado
+                        selectedPlaceId = selectedPlace.placeId // Actualizar el lugar seleccionado
                         val apiKey = getApiKeyFromManifest(context) ?: ""
                         viewModel.getPlaceDetailsFromPlaceId(selectedPlace.placeId, apiKey)
                     })
@@ -192,6 +213,10 @@ fun MapScreen(
             onSuggestionSelected = { prediction ->
                 onSearch(prediction.place_id)
                 onSearchQueryChange(prediction.description)
+                viewModel.selectedLocation.value = null // Limpiar la ubicación seleccionada
+                viewModel.placeDetails.value = null // Limpiar la información del lugar seleccionado
+                showNearbyPlaces = false // Ocultar la lista de lugares cercanos
+                selectedPlaceId = prediction.place_id // Actualizar el lugar seleccionado
             },
             onCenterMap = centerMap,
             onSearch = handleSearch
