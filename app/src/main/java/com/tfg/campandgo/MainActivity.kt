@@ -3,23 +3,23 @@ package com.tfg.campandgo
 import com.tfg.campandgo.ui.screen.HomeScreen
 import android.content.Intent
 import android.os.Bundle
-import androidx.compose.material.icons.Icons
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
@@ -33,25 +33,33 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
 import com.google.android.libraries.places.api.Places
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.tfg.campandgo.ui.screen.LoginScreen
+import com.tfg.campandgo.ui.screen.RegisterScreen
+import com.tfg.campandgo.ui.screen.StartScreen
 import com.tfg.campandgo.ui.theme.CampAndGoTheme
 
+/**
+ * Actividad principal de la aplicación CampAndGo.
+ * Gestiona la navegación entre pantallas, la autenticación de Google y la inicialización de servicios.
+ */
 class MainActivity : ComponentActivity() {
 
-    private lateinit var auth: FirebaseAuth
-    private lateinit var googleSignInClient: GoogleSignInClient
+    private lateinit var auth: FirebaseAuth // Instancia de Firebase Authentication
+    private lateinit var googleSignInClient: GoogleSignInClient // Cliente de inicio de sesión de Google
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         initializeGoogleSignIn()
+
+        // Inicializa el servicio Places si no está ya inicializado
         if (!Places.isInitialized()) {
             Places.initialize(applicationContext, "YOUR_API_KEY")
         }
 
+        // Establece el contenido de la actividad utilizando Compose
         setContent {
             CampAndGoTheme {
                 NavigatorHub(
@@ -61,15 +69,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Configura el inicio de sesión de Google con las opciones predeterminadas.
+     */
     private fun initializeGoogleSignIn() {
         auth = Firebase.auth
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.default_web_client_id))
-            .requestEmail()
+            .requestIdToken(getString(R.string.default_web_client_id)) // Solicita el ID token
+            .requestEmail() // Solicita el correo electrónico del usuario
             .build()
         googleSignInClient = GoogleSignIn.getClient(this, gso)
     }
 
+    /**
+     * Inicia el proceso de inicio de sesión de Google.
+     */
     private fun startGoogleSignIn() {
         val signInIntent = googleSignInClient.signInIntent
         startActivityForResult(signInIntent, RC_SIGN_IN)
@@ -83,11 +97,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Maneja el resultado del inicio de sesión de Google y realiza la autenticación con Firebase.
+     *
+     * @param task Resultado del intento de inicio de sesión de Google.
+     */
     private fun handleSignInResult(task: Task<GoogleSignInAccount>) {
         val account = task.getResult(ApiException::class.java)
         account?.idToken?.let { firebaseAuthWithGoogle(it) }
     }
 
+    /**
+     * Autentica al usuario con Firebase utilizando el token de Google.
+     *
+     * @param idToken Token de Google proporcionado tras el inicio de sesión.
+     */
     private fun firebaseAuthWithGoogle(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential).addOnCompleteListener(this) { task ->
@@ -98,10 +122,15 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        private const val RC_SIGN_IN = 9001
+        private const val RC_SIGN_IN = 9001 // Código de solicitud para el inicio de sesión de Google
     }
 }
 
+/**
+ * Composable que gestiona la navegación entre las pantallas principales de la aplicación.
+ *
+ * @param onGoogleSignInClick Callback que se ejecuta al seleccionar la opción de inicio de sesión con Google.
+ */
 @Composable
 fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
     val navigator = rememberNavController()
@@ -131,6 +160,16 @@ fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
     }
 }
 
+/**
+ * Composable para un botón personalizado.
+ *
+ * @param text Texto que se mostrará en el botón.
+ * @param onClick Acción que se ejecutará al presionar el botón.
+ * @param modifier Modificador opcional para personalizar la apariencia del botón.
+ * @param backgroundColor Color de fondo del botón.
+ * @param contentColor Color del texto y contenido del botón.
+ * @param icon Composable opcional que representa un ícono a la izquierda del texto.
+ */
 @Composable
 fun CustomButton(
     text: String,
@@ -160,278 +199,6 @@ fun CustomButton(
             icon?.invoke()
             if (icon != null) Spacer(modifier = Modifier.width(8.dp))
             Text(text = text, fontSize = 16.sp)
-        }
-    }
-}
-
-@Composable
-fun StartScreen(
-    onLoginClick: () -> Unit,
-    onGoogleSignInClick: () -> Unit,
-    onRegisterClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Welcome to CampAndGo!",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .padding(bottom = 32.dp)
-                .fillMaxWidth()
-        )
-
-        CustomButton(
-            text = "Login",
-            onClick = onLoginClick,
-            backgroundColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        CustomButton(
-            text = "Login with Google",
-            onClick = onGoogleSignInClick,
-            backgroundColor = Color(0xFF4285F4),
-            contentColor = Color.White,
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Google Icon",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(onClick = onRegisterClick) {
-            Text("Don't have an account? Register", color = MaterialTheme.colorScheme.primary)
-        }
-    }
-}
-
-@Composable
-fun LoginScreen(
-    onLoginClick: () -> Unit,
-    onRegisterClick: () -> Unit,
-    onGoogleSignInClick: () -> Unit
-) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isPasswordVisible by remember { mutableStateOf(false) }
-    val auth = Firebase.auth
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        TextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth(),
-            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                    Icon(
-                        imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                        contentDescription = if (isPasswordVisible) "Hide password" else "Show password"
-                    )
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        errorMessage?.let {
-            Text(text = it, color = Color.Red, modifier = Modifier.padding(bottom = 8.dp))
-        }
-
-        CustomButton(
-            text = "Login",
-            onClick = {
-                if (email.isBlank() || password.isBlank()) {
-                    errorMessage = "Please fill in all fields"
-                } else {
-                    auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            onLoginClick()
-                        } else {
-                            when (task.exception) {
-                                is FirebaseAuthInvalidUserException -> {
-                                    errorMessage = "No account found with this email."
-                                }
-                                is FirebaseAuthInvalidCredentialsException -> {
-                                    errorMessage = when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
-                                        "ERROR_INVALID_EMAIL" -> "The email address is badly formatted."
-                                        "ERROR_WRONG_PASSWORD" -> "Incorrect password. Please try again."
-                                        else -> "Invalid credentials. Please check your email and password."
-                                    }
-                                }
-                                else -> {
-                                    errorMessage = "Login failed. Please check your email and password."
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            backgroundColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        CustomButton(
-            text = "Sign in with Google",
-            onClick = onGoogleSignInClick,
-            backgroundColor = Color(0xFF4285F4),
-            contentColor = Color.White,
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Google Icon",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(onClick = onRegisterClick) {
-            Text("Don't have an account? Register", color = MaterialTheme.colorScheme.primary)
-        }
-    }
-}
-
-@Composable
-fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVerify by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var isPasswordVisible by remember { mutableStateOf(false) }
-    var isPasswordVerifyVisible by remember { mutableStateOf(false) }
-    val auth = Firebase.auth
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        TextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth(),
-            visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                    Icon(
-                        imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = if (isPasswordVisible) "Hide password" else "Show password"
-                    )
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = passwordVerify,
-            onValueChange = { passwordVerify = it },
-            label = { Text("Repeat password") },
-            modifier = Modifier.fillMaxWidth(),
-            visualTransformation = if (isPasswordVerifyVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                IconButton(onClick = { isPasswordVerifyVisible = !isPasswordVerifyVisible }) {
-                    Icon(
-                        imageVector = if (isPasswordVerifyVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = if (isPasswordVerifyVisible) "Hide password" else "Show password"
-                    )
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        errorMessage?.let {
-            Text(text = it, color = Color.Red, modifier = Modifier.padding(bottom = 8.dp))
-        }
-
-        CustomButton(
-            text = "Register",
-            onClick = {
-                if (email.isBlank() || password.isBlank() || passwordVerify.isBlank()) {
-                    errorMessage = "Please fill in all fields"
-                } else if (password != passwordVerify) {
-                    errorMessage = "Passwords do not match"
-                } else if (password.length > 10) {
-                    errorMessage = "Password must be under 10 characters"
-                } else if (!password.contains(Regex("\\d+"))) {
-                    errorMessage = "Password must contain at least one digit."
-                } else {
-                    auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            onRegisterClick()
-                        } else {
-                            when (task.exception) {
-                                is FirebaseAuthInvalidCredentialsException -> {
-                                    errorMessage = when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
-                                        "ERROR_INVALID_EMAIL" -> "The email address is badly formatted."
-                                        "ERROR_WRONG_PASSWORD" -> "Incorrect password. Please try again."
-                                        else -> "Invalid credentials. Please check your email and password."
-                                    }
-                                }
-                                else -> {
-                                    errorMessage = "Registration failed. Please check the fields and try again."
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            backgroundColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(onClick = onBackToLoginClick) {
-            Text("Already have an account? Login", color = MaterialTheme.colorScheme.primary)
         }
     }
 }

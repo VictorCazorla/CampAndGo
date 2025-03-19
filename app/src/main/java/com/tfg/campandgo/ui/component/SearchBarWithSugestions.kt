@@ -15,6 +15,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.tfg.campandgo.data.model.Prediction
 
+/**
+ * Una función composable que representa una barra de búsqueda con sugerencias.
+ * Permite al usuario buscar una ubicación, ver sugerencias en base a su consulta,
+ * centrar el mapa en la posición actual o realizar una búsqueda explícita.
+ *
+ * @param searchQuery Cadena de texto que representa la consulta actual en el campo de búsqueda.
+ * @param onSearchQueryChange Callback que se ejecuta cuando el usuario modifica la consulta.
+ * @param suggestions Lista de objetos `Prediction` que representan las sugerencias basadas en la consulta.
+ * @param errorMessage Mensaje de error opcional que se muestra si ocurre un problema durante la búsqueda.
+ * @param onSuggestionSelected Callback que se ejecuta cuando el usuario selecciona una sugerencia.
+ *                              Recibe el objeto `Prediction` correspondiente.
+ * @param onCenterMap Callback que se ejecuta al presionar el botón para centrar el mapa en la ubicación actual.
+ * @param onSearch Callback que se ejecuta cuando el usuario presiona el botón de búsqueda.
+ */
 @Composable
 fun SearchBarWithSuggestions(
     searchQuery: String,
@@ -30,6 +44,7 @@ fun SearchBarWithSuggestions(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
