@@ -1,4 +1,4 @@
-package com.tfg.campandgo.ui.components
+package com.tfg.campandgo.ui.component
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

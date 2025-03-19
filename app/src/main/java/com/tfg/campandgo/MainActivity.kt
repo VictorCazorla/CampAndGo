@@ -1,6 +1,6 @@
 package com.tfg.campandgo
 
-import HomeScreen
+import com.tfg.campandgo.ui.screen.HomeScreen
 import android.content.Intent
 import android.os.Bundle
 import androidx.compose.material.icons.Icons
@@ -15,10 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -127,7 +124,7 @@ fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
         composable("register") {
             RegisterScreen(
                 onRegisterClick = { navigator.navigate("login") },
-                onBackToLoginClick = { navigator.popBackStack() }
+                onBackToLoginClick = { navigator.navigate("login") }
             )
         }
         composable("home") { HomeScreen() }

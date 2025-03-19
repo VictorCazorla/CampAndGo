@@ -1,4 +1,4 @@
-package com.tfg.campandgo.ui.components
+package com.tfg.campandgo.ui.component
 
 import android.Manifest
 import android.content.pm.PackageManager

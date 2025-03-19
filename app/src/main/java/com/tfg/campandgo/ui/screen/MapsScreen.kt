@@ -17,10 +17,32 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.Prediction
-import com.tfg.campandgo.ui.components.NearbyPlaceItem
-import com.tfg.campandgo.ui.components.SearchBarWithSuggestions
+import com.tfg.campandgo.ui.component.NearbyPlaceItem
+import com.tfg.campandgo.ui.component.SearchBarWithSuggestions
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
 
+/**
+ * Pantalla que muestra un mapa interactivo con funcionalidades de búsqueda y visualización de lugares cercanos.
+ *
+ * Esta pantalla incluye:
+ * - Un mapa de Google Maps con marcadores para la ubicación actual y lugares cercanos.
+ * - Una barra de búsqueda con sugerencias.
+ * - Un botón para mostrar/ocultar la lista de lugares cercanos.
+ * - Detalles del lugar seleccionado.
+ *
+ * @param currentLocation La ubicación actual del usuario.
+ * @param searchQuery El texto de búsqueda ingresado por el usuario.
+ * @param onSearchQueryChange Callback que se ejecuta cuando cambia el texto de búsqueda.
+ * @param onSearch Callback que se ejecuta cuando se realiza una búsqueda.
+ * @param searchSuggestions Lista de sugerencias de búsqueda.
+ * @param errorMessage Mensaje de error a mostrar, si existe.
+ * @param nearbyPlaces Lista de lugares cercanos.
+ * @param viewModel El ViewModel que gestiona la lógica de la pantalla.
+ *
+ * @see MapsViewModel Para más detalles sobre el ViewModel utilizado.
+ * @see SearchBarWithSuggestions Para la barra de búsqueda y sugerencias.
+ * @see NearbyPlaceItem Para los elementos de la lista de lugares cercanos.
+ */
 @Composable
 fun MapScreen(
     currentLocation: LatLng?,
@@ -59,13 +81,16 @@ fun MapScreen(
     }
 
     /**
-     * Maneja los clics en el mapa
+     * Maneja los clics en el mapa.
+     *
+     * @param latLng La ubicación seleccionada en el mapa.
      */
     val handleMapClick: (LatLng) -> Unit = { latLng ->
         viewModel.selectedLocation.value = latLng
         if (apiKey != null) viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey)
     }
 
+    // Actualizar la posición de la cámara cuando cambia la ubicación actual
     LaunchedEffect(currentLocation) {
         currentLocation?.let {
             cameraPositionState.position = CameraPosition.fromLatLngZoom(it, 15f)
@@ -173,6 +198,13 @@ fun MapScreen(
         )
     }
 }
+
+/**
+ * Obtiene la API Key de Google Maps desde el archivo `AndroidManifest.xml`.
+ *
+ * @param context El contexto de la aplicación.
+ * @return La API Key como String, o `null` si no se encuentra o hay un error.
+ */
 private fun getApiKeyFromManifest(context: Context): String? {
     return try {
         val appInfo = context.packageManager
