@@ -64,6 +64,21 @@ class MapsViewModel : ViewModel() {
     }
 
     /**
+     * Limpia las ubicaciones de la API de autocompletado de Google Places.
+     *
+     * @param context El contexto de la aplicación para mostrar Toasts.
+     */
+    fun clearSearchLocations(context: Context) {
+        viewModelScope.launch {
+            try {
+                searchSuggestions.clear()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error cerrando ubicaciones: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
      * Obtiene las coordenadas de una ubicación utilizando su placeId.
      *
      * @param placeId El ID del lugar.
@@ -154,20 +169,31 @@ class MapsViewModel : ViewModel() {
      * @param location La ubicación desde la cual buscar.
      * @param apiKey La API Key de Google Places.
      * @param context El contexto de la aplicación para mostrar Toasts.
+     * @param terms La lista de términos para filtrar los lugares.
      */
-    fun fetchNearbyPlaces(location: LatLng, apiKey: String, context: Context) {
+    fun fetchNearbyPlaces(
+        location: LatLng,
+        apiKey: String,
+        context: Context,
+        terms: List<String>
+    ) {
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.placesService.nearbySearch(
                     location = "${location.latitude},${location.longitude}",
                     radius = 1000,
-                    type = "restaurant",
+                    type = "",
                     key = apiKey
                 )
 
                 if (response.status == "OK") {
                     nearbyPlaces.clear()
-                    nearbyPlaces.addAll(response.results)
+                    // Filtrar los lugares según la lista de términos
+                    nearbyPlaces.addAll(response.results.filter { place ->
+                            terms.any { term -> place.types?.contains(term) == true }
+                        }
+                    )
+                    Log.d("MapsViewModel", "Places: $nearbyPlaces")
                 } else {
                     Toast.makeText(context, "No se encontraron lugares cercanos.", Toast.LENGTH_SHORT).show()
                 }
@@ -176,4 +202,5 @@ class MapsViewModel : ViewModel() {
             }
         }
     }
+
 }

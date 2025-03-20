@@ -22,11 +22,10 @@ import com.tfg.campandgo.data.model.PlaceDetails
 fun PlaceDetailsSection(place: PlaceDetails) {
     Surface(
         modifier = Modifier
-            .padding(16.dp)
+            .padding(5.dp)
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(16.dp),
+            .background(MaterialTheme.colorScheme.surfaceVariant),
         color = MaterialTheme.colorScheme.surfaceVariant,
         shadowElevation = 4.dp,
         shape = RoundedCornerShape(12.dp)
@@ -48,20 +47,12 @@ fun PlaceDetailsSection(place: PlaceDetails) {
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Detalles del lugar",
+                    text = "${place.name}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-
-            // Nombre del lugar
-            Text(
-                text = "Nombre: ${place.name}",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
 
             // Dirección
             Text(
@@ -70,11 +61,9 @@ fun PlaceDetailsSection(place: PlaceDetails) {
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
             )
 
-            // Tipos de lugar
             Text(
-                text = "Tipos: ${place.types?.joinToString() ?: "Desconocido"}",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                text = "Rating: ${place.rating ?: "No disponible"}",
+                style = MaterialTheme.typography.titleMedium
             )
         }
     }

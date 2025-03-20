@@ -36,10 +36,6 @@ fun NearbyPlaceItem(place: Place, onPlaceSelected: (Place) -> Unit) {
                 text = place.vicinity ?: "Dirección no disponible",
                 style = MaterialTheme.typography.bodySmall
             )
-            Text(
-                text = "Rating: ${place.rating ?: "No disponible"}",
-                style = MaterialTheme.typography.bodySmall
-            )
         }
     }
 }

@@ -26,6 +26,7 @@ data class Place(
     @SerializedName("name") val name: String,
     @SerializedName("vicinity") val vicinity: String?,
     @SerializedName("geometry") val geometry: GeometryN?,
+    @SerializedName("types") val types: Array<String>?,
     @SerializedName("rating") val rating: Double?,
     @SerializedName("place_id") val placeId: String
 )

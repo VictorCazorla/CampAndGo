@@ -41,27 +41,26 @@ fun HomeScreen() {
     if (viewModel.hasLocationPermission.value) {
         LocationFetcher { location ->
             viewModel.selectedLocation.value = location
-            viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context)
         }
-    }
 
-    // Realizar búsqueda de ubicaciones cuando el texto de búsqueda tenga más de 2 caracteres
-    LaunchedEffect(searchQuery) {
-        if (searchQuery.length > 2) {
-            viewModel.searchLocations(searchQuery, apiKey, context)
+        // Realizar búsqueda de ubicaciones cuando el texto de búsqueda tenga más de 2 caracteres
+        LaunchedEffect(searchQuery) {
+            if (searchQuery.length > 2) {
+                viewModel.searchLocations(searchQuery, apiKey, context)
+            }
         }
-    }
 
-    // Mostrar la pantalla del mapa con los datos actuales
-    MapScreen(
-        currentLocation = viewModel.selectedLocation.value,
-        searchQuery = searchQuery,
-        onSearchQueryChange = { searchQuery = it },
-        onSearch = { placeId -> viewModel.getLocationDetails(placeId, apiKey, context) },
-        searchSuggestions = viewModel.searchSuggestions,
-        nearbyPlaces = viewModel.nearbyPlaces,
-        viewModel = viewModel
-    )
+        // Mostrar la pantalla del mapa con los datos actuales
+        MapScreen(
+            currentLocation = viewModel.selectedLocation.value,
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it },
+            onSearch = { placeId -> viewModel.getLocationDetails(placeId, apiKey, context) },
+            searchSuggestions = viewModel.searchSuggestions,
+            nearbyPlaces = viewModel.nearbyPlaces,
+            viewModel = viewModel
+        )
+    }
 }
 
 /**

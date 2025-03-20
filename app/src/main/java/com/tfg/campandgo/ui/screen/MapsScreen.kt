@@ -61,6 +61,7 @@ fun MapScreen(
     val apiKey = remember { getApiKeyFromManifest(context) }
     var showNearbyPlaces by remember { mutableStateOf(false) } // Estado para controlar la visibilidad
     var selectedPlaceId by remember { mutableStateOf<String?>(null) } // Estado para rastrear el lugar seleccionado
+    var termFilterList by remember { mutableStateOf(listOf("")) } // Listado de terminos de filtrado
 
     // Función para centrar el mapa en la ubicación actual
     val centerMap: () -> Unit = {
@@ -75,7 +76,7 @@ fun MapScreen(
             viewModel.geocodeAddress(searchQuery, context) { latLng ->
                 latLng?.let {
                     viewModel.selectedLocation.value = it
-                    if (apiKey != null) viewModel.fetchNearbyPlaces(latLng, apiKey, context)
+                    if (apiKey != null) viewModel.fetchNearbyPlaces(latLng, apiKey, context, termFilterList)
                     cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(it, 15f))
                 }
             }
@@ -89,13 +90,14 @@ fun MapScreen(
      */
     val handleMapClick: (LatLng) -> Unit = { latLng ->
         viewModel.selectedLocation.value = latLng
-        if (apiKey != null) viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context)
+        if (apiKey != null) viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
     }
 
     // Actualizar la posición de la cámara cuando cambia la ubicación actual
     LaunchedEffect(currentLocation) {
         currentLocation?.let {
             cameraPositionState.position = CameraPosition.fromLatLngZoom(it, 15f)
+            if (apiKey != null) viewModel.clearSearchLocations(context)
         }
     }
 
@@ -167,10 +169,13 @@ fun MapScreen(
         // Botón para mostrar/ocultar la lista de lugares cercanos
         Button(
             onClick = {
+                termFilterList= listOf("bar","restaurant","cafe")
+                if (apiKey != null) {
+                    viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
+                }
                 showNearbyPlaces = !showNearbyPlaces // Cambia el estado
                 if (!showNearbyPlaces) {
                     viewModel.placeDetails.value = null // Limpiar la información del lugar seleccionado
-                    selectedPlaceId = null // Limpiar el lugar seleccionado
                 }
             },
             modifier = Modifier
@@ -179,6 +184,24 @@ fun MapScreen(
         ) {
             Text(if (showNearbyPlaces) "Ocultar lugares cercanos" else "Mostrar lugares cercanos")
         }
+
+//        Button(
+//            onClick = {
+//                termFilterList= listOf("dentist")
+//                if (apiKey != null) {
+//                    viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
+//                }
+//                showNearbyPlaces = !showNearbyPlaces // Cambia el estado
+//                if (!showNearbyPlaces) {
+//                    viewModel.placeDetails.value = null // Limpiar la información del lugar seleccionado
+//                }
+//            },
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(16.dp)
+//        ) {
+//            Text(if (showNearbyPlaces) "Ocultar" else "DENTISTAS")
+//        }
 
         // Lista de lugares cercanos (solo si showNearbyPlaces es true)
         if (showNearbyPlaces) {
@@ -229,6 +252,7 @@ fun MapScreen(
  * @return La API Key como String, o `null` si no se encuentra o hay un error.
  */
 private fun getApiKeyFromManifest(context: Context): String? {
+
     return try {
         val appInfo = context.packageManager
             .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)

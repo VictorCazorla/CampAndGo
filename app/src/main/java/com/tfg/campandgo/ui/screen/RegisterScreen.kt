@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.ktx.auth
@@ -26,6 +27,7 @@ import com.tfg.campandgo.CustomButton
  * @param onRegisterClick Callback que se ejecuta cuando el registro es exitoso.
  * @param onBackToLoginClick Callback que se ejecuta cuando el usuario decide regresar a la pantalla de inicio de sesión.
  */
+
 @Composable
 fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) {
     // Variables de estado para la entrada de datos

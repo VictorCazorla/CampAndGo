@@ -16,10 +16,9 @@ data class PlaceDetailsResponse(
  *
  * @property name El nombre del lugar (opcional).
  * @property formatted_address La dirección formateada del lugar (opcional).
- * @property types Una lista de tipos categóricos asociados al lugar (opcional).
  */
 data class PlaceDetails(
     val name: String?,
     val formatted_address: String?,
-    val types: List<String>?
+    val rating: String?
 )
