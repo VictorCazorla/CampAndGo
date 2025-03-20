@@ -107,7 +107,7 @@ fun MapScreen(
             modifier = Modifier.weight(1f),
             cameraPositionState = cameraPositionState,
             properties = MapProperties(
-                isMyLocationEnabled = true,
+                isMyLocationEnabled = true, // Esto habilita el punto azul de "Mi ubicación"
                 minZoomPreference = 10f,
                 maxZoomPreference = 20f,
                 mapType = MapType.TERRAIN
@@ -115,21 +115,13 @@ fun MapScreen(
             uiSettings = uiSettings,
             onMapClick = handleMapClick // Detectar el clic en el mapa
         ) {
-            // Marcador para la ubicación actual (siempre visible)
-            currentLocation?.let { location ->
-                Marker(
-                    state = MarkerState(position = location),
-                    title = "Ubicación actual",
-                    snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${"%.4f".format(location.longitude)}"
-                )
-            }
-
+            // Marcador de la ubicación seleccionada (solo si el usuario ha hecho clic)
             viewModel.selectedLocation.value?.let { location ->
                 Marker(
                     state = MarkerState(position = location),
                     title = "Ubicación seleccionada",
                     snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${"%.4f".format(location.longitude)}",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE) // Cambia el color del marcador
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE) // Marcador azul
                 )
             }
 
@@ -169,7 +161,7 @@ fun MapScreen(
         // Botón para mostrar/ocultar la lista de lugares cercanos
         Button(
             onClick = {
-                termFilterList= listOf("bar","restaurant","cafe")
+                termFilterList = listOf("point_of_interest")
                 if (apiKey != null) {
                     viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
                 }
@@ -184,24 +176,6 @@ fun MapScreen(
         ) {
             Text(if (showNearbyPlaces) "Ocultar lugares cercanos" else "Mostrar lugares cercanos")
         }
-
-//        Button(
-//            onClick = {
-//                termFilterList= listOf("dentist")
-//                if (apiKey != null) {
-//                    viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
-//                }
-//                showNearbyPlaces = !showNearbyPlaces // Cambia el estado
-//                if (!showNearbyPlaces) {
-//                    viewModel.placeDetails.value = null // Limpiar la información del lugar seleccionado
-//                }
-//            },
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(16.dp)
-//        ) {
-//            Text(if (showNearbyPlaces) "Ocultar" else "DENTISTAS")
-//        }
 
         // Lista de lugares cercanos (solo si showNearbyPlaces es true)
         if (showNearbyPlaces) {
@@ -252,7 +226,6 @@ fun MapScreen(
  * @return La API Key como String, o `null` si no se encuentra o hay un error.
  */
 private fun getApiKeyFromManifest(context: Context): String? {
-
     return try {
         val appInfo = context.packageManager
             .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
