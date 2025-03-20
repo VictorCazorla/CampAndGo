@@ -96,6 +96,7 @@ fun MapScreen(
     LaunchedEffect(currentLocation) {
         currentLocation?.let {
             cameraPositionState.position = CameraPosition.fromLatLngZoom(it, 15f)
+            if (apiKey != null) viewModel.clearSearchLocations(context)
         }
     }
 

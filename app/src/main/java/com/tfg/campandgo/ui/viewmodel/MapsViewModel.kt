@@ -64,6 +64,21 @@ class MapsViewModel : ViewModel() {
     }
 
     /**
+     * Limpia las ubicaciones de la API de autocompletado de Google Places.
+     *
+     * @param context El contexto de la aplicación para mostrar Toasts.
+     */
+    fun clearSearchLocations(context: Context) {
+        viewModelScope.launch {
+            try {
+                searchSuggestions.clear()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error cerrando ubicaciones: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
      * Obtiene las coordenadas de una ubicación utilizando su placeId.
      *
      * @param placeId El ID del lugar.
