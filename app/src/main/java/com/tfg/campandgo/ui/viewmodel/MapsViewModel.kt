@@ -175,7 +175,7 @@ class MapsViewModel : ViewModel() {
         location: LatLng,
         apiKey: String,
         context: Context,
-        terms: List<String>
+        terms: MutableList<String>
     ) {
         viewModelScope.launch {
             try {
@@ -190,9 +190,8 @@ class MapsViewModel : ViewModel() {
                     nearbyPlaces.clear()
                     // Filtrar los lugares según la lista de términos
                     nearbyPlaces.addAll(response.results.filter { place ->
-                            terms.any { term -> place.types?.contains(term) == true }
-                        }
-                    )
+                        terms.any { term -> place.types?.contains(term) == true }
+                    })
                     Log.d("MapsViewModel", "Places: $nearbyPlaces")
                 } else {
                     Toast.makeText(context, "No se encontraron lugares cercanos.", Toast.LENGTH_SHORT).show()

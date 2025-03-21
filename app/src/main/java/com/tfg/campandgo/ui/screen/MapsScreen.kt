@@ -1,13 +1,16 @@
 package com.tfg.campandgo.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -21,6 +24,7 @@ import com.tfg.campandgo.data.model.Prediction
 import com.tfg.campandgo.ui.component.NearbyPlaceItem
 import com.tfg.campandgo.ui.component.PlaceDetailsSection
 import com.tfg.campandgo.ui.component.SearchBarWithSuggestions
+import com.tfg.campandgo.ui.component.ToggleButtonGrid
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
 
 /**
@@ -31,20 +35,17 @@ import com.tfg.campandgo.ui.viewmodel.MapsViewModel
  * - Una barra de búsqueda con sugerencias.
  * - Un botón para mostrar/ocultar la lista de lugares cercanos.
  * - Detalles del lugar seleccionado.
+ * - Un grid de botones para filtrar lugares cercanos.
  *
  * @param currentLocation La ubicación actual del usuario.
  * @param searchQuery El texto de búsqueda ingresado por el usuario.
  * @param onSearchQueryChange Callback que se ejecuta cuando cambia el texto de búsqueda.
  * @param onSearch Callback que se ejecuta cuando se realiza una búsqueda.
  * @param searchSuggestions Lista de sugerencias de búsqueda.
- * @param errorMessage Mensaje de error a mostrar, si existe.
  * @param nearbyPlaces Lista de lugares cercanos.
  * @param viewModel El ViewModel que gestiona la lógica de la pantalla.
- *
- * @see MapsViewModel Para más detalles sobre el ViewModel utilizado.
- * @see SearchBarWithSuggestions Para la barra de búsqueda y sugerencias.
- * @see NearbyPlaceItem Para los elementos de la lista de lugares cercanos.
  */
+@SuppressLint("MutableCollectionMutableState")
 @Composable
 fun MapScreen(
     currentLocation: LatLng?,
@@ -59,9 +60,25 @@ fun MapScreen(
     val uiSettings = remember { MapUiSettings(zoomControlsEnabled = false) }
     val context = LocalContext.current
     val apiKey = remember { getApiKeyFromManifest(context) }
-    var showNearbyPlaces by remember { mutableStateOf(false) } // Estado para controlar la visibilidad
-    var selectedPlaceId by remember { mutableStateOf<String?>(null) } // Estado para rastrear el lugar seleccionado
-    var termFilterList by remember { mutableStateOf(listOf("")) } // Listado de terminos de filtrado
+    var showNearbyPlaces by remember { mutableStateOf(false) }
+    var selectedPlaceId by remember { mutableStateOf<String?>(null) }
+    var termFilterList by remember { mutableStateOf(mutableListOf<String>()) }
+
+    // Mover la cámara a la ubicación actual al inicio
+    LaunchedEffect(currentLocation) {
+        currentLocation?.let { location ->
+            cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(location, 15f))
+        }
+    }
+
+    // Función para manejar los filtros seleccionados
+    val handleFilterSelected: (List<String>) -> Unit = { filters ->
+        termFilterList = filters.toMutableList()
+        Log.d("MapsViewModel", "Filtros seleccionados: $termFilterList")
+        if (apiKey != null && showNearbyPlaces) {
+            viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
+        }
+    }
 
     // Función para centrar el mapa en la ubicación actual
     val centerMap: () -> Unit = {
@@ -76,56 +93,42 @@ fun MapScreen(
             viewModel.geocodeAddress(searchQuery, context) { latLng ->
                 latLng?.let {
                     viewModel.selectedLocation.value = it
-                    if (apiKey != null) viewModel.fetchNearbyPlaces(latLng, apiKey, context, termFilterList)
+                    if (apiKey != null) viewModel.fetchNearbyPlaces(it, apiKey, context, termFilterList)
                     cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(it, 15f))
                 }
             }
         }
     }
 
-    /**
-     * Maneja los clics en el mapa.
-     *
-     * @param latLng La ubicación seleccionada en el mapa.
-     */
-    val handleMapClick: (LatLng) -> Unit = { latLng ->
-        viewModel.selectedLocation.value = latLng
-        if (apiKey != null) viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
-    }
-
-    // Actualizar la posición de la cámara cuando cambia la ubicación actual
-    LaunchedEffect(currentLocation) {
-        currentLocation?.let {
-            cameraPositionState.position = CameraPosition.fromLatLngZoom(it, 15f)
-            if (apiKey != null) viewModel.clearSearchLocations(context)
-        }
-    }
-
     Column(modifier = Modifier.fillMaxSize()) {
+
         // GoogleMap con condicional para mostrar ubicaciones solo cuando showNearbyPlaces sea true
         GoogleMap(
             modifier = Modifier.weight(1f),
             cameraPositionState = cameraPositionState,
             properties = MapProperties(
-                isMyLocationEnabled = true, // Esto habilita el punto azul de "Mi ubicación"
+                isMyLocationEnabled = true,
                 minZoomPreference = 10f,
                 maxZoomPreference = 20f,
                 mapType = MapType.TERRAIN
             ),
             uiSettings = uiSettings,
-            onMapClick = handleMapClick // Detectar el clic en el mapa
+            onMapClick = { latLng ->
+                viewModel.selectedLocation.value = latLng
+                if (apiKey != null) viewModel.fetchNearbyPlaces(latLng, apiKey, context, termFilterList)
+            }
         ) {
-            // Marcador de la ubicación seleccionada (solo si el usuario ha hecho clic)
+            // Marcador de la ubicación seleccionada
             viewModel.selectedLocation.value?.let { location ->
                 Marker(
                     state = MarkerState(position = location),
                     title = "Ubicación seleccionada",
                     snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${"%.4f".format(location.longitude)}",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE) // Marcador azul
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
                 )
             }
 
-            // Solo mostrar lugares cercanos si showNearbyPlaces es true
+            // Mostrar lugares cercanos si showNearbyPlaces es true
             if (showNearbyPlaces) {
                 nearbyPlaces.forEach { place ->
                     place.geometry?.location?.let { location ->
@@ -134,24 +137,24 @@ fun MapScreen(
                             title = place.name,
                             snippet = place.vicinity,
                             icon = if (place.placeId == selectedPlaceId) {
-                                // Marcador verde para el lugar seleccionado
                                 BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
                             } else {
-                                // Marcador predeterminado para otros lugares
                                 BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                             },
                             onClick = { marker ->
-                                // Mostrar detalles del lugar seleccionado
-                                selectedPlaceId = place.placeId // Actualizar el lugar seleccionado
+                                selectedPlaceId = place.placeId
                                 val apiKey = getApiKeyFromManifest(context) ?: ""
                                 viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey, context)
-                                true // Indica que el evento ha sido manejado
+                                true
                             }
                         )
                     }
                 }
             }
         }
+
+
+        ToggleButtonGrid(onFilterSelected = handleFilterSelected)
 
         // Mostrar detalles del lugar seleccionado
         viewModel.placeDetails.value?.let { place ->
@@ -161,7 +164,6 @@ fun MapScreen(
         // Botón para mostrar/ocultar la lista de lugares cercanos
         Button(
             onClick = {
-                termFilterList = listOf("point_of_interest")
                 if (apiKey != null) {
                     viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
                 }
@@ -169,6 +171,7 @@ fun MapScreen(
                 if (!showNearbyPlaces) {
                     viewModel.placeDetails.value = null // Limpiar la información del lugar seleccionado
                 }
+                Log.d("MapsViewModel", "Terms: $termFilterList")
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -218,7 +221,6 @@ fun MapScreen(
         )
     }
 }
-
 /**
  * Obtiene la API Key de Google Maps desde el archivo `AndroidManifest.xml`.
  *
