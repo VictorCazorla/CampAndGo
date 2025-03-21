@@ -175,7 +175,7 @@ class MapsViewModel : ViewModel() {
         location: LatLng,
         apiKey: String,
         context: Context,
-        terms: List<String>
+        terms: MutableList<String>
     ) {
         viewModelScope.launch {
             try {

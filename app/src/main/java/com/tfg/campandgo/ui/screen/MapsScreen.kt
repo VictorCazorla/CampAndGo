@@ -1,15 +1,19 @@
 package com.tfg.campandgo.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -45,6 +49,7 @@ import com.tfg.campandgo.ui.viewmodel.MapsViewModel
  * @see SearchBarWithSuggestions Para la barra de búsqueda y sugerencias.
  * @see NearbyPlaceItem Para los elementos de la lista de lugares cercanos.
  */
+@SuppressLint("MutableCollectionMutableState")
 @Composable
 fun MapScreen(
     currentLocation: LatLng?,
@@ -61,7 +66,7 @@ fun MapScreen(
     val apiKey = remember { getApiKeyFromManifest(context) }
     var showNearbyPlaces by remember { mutableStateOf(false) } // Estado para controlar la visibilidad
     var selectedPlaceId by remember { mutableStateOf<String?>(null) } // Estado para rastrear el lugar seleccionado
-    var termFilterList by remember { mutableStateOf(listOf("")) } // Listado de terminos de filtrado
+    var termFilterList by remember { mutableStateOf(mutableListOf("")) } // Listado de terminos de filtrado
 
     // Función para centrar el mapa en la ubicación actual
     val centerMap: () -> Unit = {
@@ -158,10 +163,76 @@ fun MapScreen(
             PlaceDetailsSection(place = place)
         }
 
+        // Botones de filtrado
+        Row(
+            modifier = Modifier.fillMaxWidth().align(Alignment.CenterHorizontally),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Button(
+                onClick = {
+                    if (!termFilterList.contains("restaurant")) termFilterList.add("restaurant")
+                    else termFilterList.remove("restaurant")
+
+                    if (showNearbyPlaces && apiKey != null)
+                        viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
+                },
+                modifier = Modifier
+                    .width(Dp(80f))
+                    .height(Dp(80f))
+                    .padding(16.dp)
+            ) {
+                Text(if (termFilterList.contains("restaurant")) "R" else "r")
+            }
+            Button(
+                onClick = {
+                    if (!termFilterList.contains("lodging")) termFilterList.add("lodging")
+                    else termFilterList.remove("lodging")
+
+                    if (showNearbyPlaces && apiKey != null)
+                        viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
+                },
+                modifier = Modifier
+                    .width(Dp(80f))
+                    .height(Dp(80f))
+                    .padding(16.dp)
+            ) {
+                Text(if (termFilterList.contains("lodging")) "L" else "l")
+            }
+            Button(
+                onClick = {
+                    if (!termFilterList.contains("car_repair")) termFilterList.add("car_repair")
+                    else termFilterList.remove("car_repair")
+
+                    if (showNearbyPlaces && apiKey != null)
+                        viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
+                },
+                modifier = Modifier
+                    .width(Dp(80f))
+                    .height(Dp(80f))
+                    .padding(16.dp)
+            ) {
+                Text(if (termFilterList.contains("car_repair")) "C" else "c")
+            }
+            Button(
+                onClick = {
+                    if (!termFilterList.contains("rest_stop")) termFilterList.add("rest_stop")
+                    else termFilterList.remove("rest_stop")
+
+                    if (showNearbyPlaces && apiKey != null)
+                        viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
+                },
+                modifier = Modifier
+                    .width(Dp(80f))
+                    .height(Dp(80f))
+                    .padding(16.dp)
+            ) {
+                Text(if (termFilterList.contains("rest_stop")) "S" else "s")
+            }
+        }
+
         // Botón para mostrar/ocultar la lista de lugares cercanos
         Button(
             onClick = {
-                termFilterList = listOf("point_of_interest")
                 if (apiKey != null) {
                     viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
                 }
@@ -169,6 +240,7 @@ fun MapScreen(
                 if (!showNearbyPlaces) {
                     viewModel.placeDetails.value = null // Limpiar la información del lugar seleccionado
                 }
+                Log.d("MapsViewModel", "Terms: $termFilterList")
             },
             modifier = Modifier
                 .fillMaxWidth()
