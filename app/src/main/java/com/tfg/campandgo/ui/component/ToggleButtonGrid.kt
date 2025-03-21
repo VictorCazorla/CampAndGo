@@ -34,6 +34,8 @@ fun ToggleButtonGrid(
         Pair("rest_stop", Icons.Default.Place)
     )
 
+    val campArray = listOf("campground","rv_park","park")
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -53,8 +55,14 @@ fun ToggleButtonGrid(
                         onClick = {
                             // Añadir o eliminar el nombre del botón de la lista
                             if (selectedButtons.contains(key)) {
+                                if(key == "camping"){
+                                    campArray.forEach() { selectedButtons.remove(it) }
+                                }
                                 selectedButtons.remove(key)
                             } else {
+                                if(key == "camping") {
+                                    campArray.forEach() { selectedButtons.add(it) }
+                                }
                                 selectedButtons.add(key)
                             }
                             // Notificar la lista actualizada
