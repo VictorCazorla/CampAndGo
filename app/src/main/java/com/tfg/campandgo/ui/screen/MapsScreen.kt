@@ -151,6 +151,38 @@ fun MapScreen(
                     }
                 }
             }
+
+            // Mostrar lugares camper cercanos si showNearbyPlaces es true
+            if (showNearbyPlaces) {
+                nearbyPlaces.forEach { place ->
+                    place.geometry?.location?.let { location ->
+                        // Verificar si el lugar tiene alguno de los tipos que estamos buscando
+                        val hasMatchingType = place.types?.any { type ->
+                            type.equals("campground", ignoreCase = true) ||
+                                    type.equals("rv_park", ignoreCase = true) ||
+                                    type.equals("park", ignoreCase = true)
+                        } == true
+
+                        Marker(
+                            state = MarkerState(position = LatLng(location.lat, location.lng)),
+                            title = place.name,
+                            snippet = place.vicinity,
+                            icon = if (hasMatchingType) {
+                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)  // Pintar de verde si tiene el tipo
+                            } else {
+                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)    // Pintar de rojo si no tiene el tipo
+                            },
+                            onClick = { marker ->
+                                // Lógica al hacer clic en el marcador
+                                selectedPlaceId = place.placeId
+                                val apiKey = getApiKeyFromManifest(context) ?: ""
+                                viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey, context)
+                                true
+                            }
+                        )
+                    }
+                }
+            }
         }
 
 
