@@ -175,24 +175,20 @@ class MapsViewModel : ViewModel() {
         location: LatLng,
         apiKey: String,
         context: Context,
-        terms: MutableList<String>
+        type: String
     ) {
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.placesService.nearbySearch(
                     location = "${location.latitude},${location.longitude}",
                     radius = 1000,
-                    type = "",
+                    type = type,
                     key = apiKey
                 )
 
                 if (response.status == "OK") {
-                    nearbyPlaces.clear()
-                    // Filtrar los lugares según la lista de términos
-                    nearbyPlaces.addAll(response.results.filter { place ->
-                        terms.any { term -> place.types?.contains(term) == true }
-                    })
-                    Log.d("MapsViewModel", "Places: $nearbyPlaces")
+                    nearbyPlaces.addAll(response.results)
+                    nearbyPlaces.forEach { place -> Log.d("MapsViewModel", "Places: $place") }
                 } else {
                     Toast.makeText(context, "No se encontraron lugares cercanos.", Toast.LENGTH_SHORT).show()
                 }
@@ -202,4 +198,12 @@ class MapsViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Limpia todos los lugares cercanos
+     */
+    fun cleanNearbyPlaces() {
+        viewModelScope.launch {
+            nearbyPlaces.clear()
+        }
+    }
 }

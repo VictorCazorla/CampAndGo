@@ -68,6 +68,7 @@ fun MapScreen(
     LaunchedEffect(currentLocation) {
         currentLocation?.let { location ->
             cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(location, 15f))
+            if (apiKey != null) viewModel.clearSearchLocations(context)
         }
     }
 
@@ -76,7 +77,10 @@ fun MapScreen(
         termFilterList = filters.toMutableList()
         Log.d("MapsViewModel", "Filtros seleccionados: $termFilterList")
         if (apiKey != null && showNearbyPlaces) {
-            viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
+            viewModel.cleanNearbyPlaces()
+            for (filter in termFilterList) {
+                viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, filter)
+            }
         }
     }
 
@@ -93,7 +97,12 @@ fun MapScreen(
             viewModel.geocodeAddress(searchQuery, context) { latLng ->
                 latLng?.let {
                     viewModel.selectedLocation.value = it
-                    if (apiKey != null) viewModel.fetchNearbyPlaces(it, apiKey, context, termFilterList)
+                    if (apiKey != null) {
+                        viewModel.cleanNearbyPlaces()
+                        for (filter in termFilterList) {
+                            viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, filter)
+                        }
+                    }
                     cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(it, 15f))
                 }
             }
@@ -115,7 +124,12 @@ fun MapScreen(
             uiSettings = uiSettings,
             onMapClick = { latLng ->
                 viewModel.selectedLocation.value = latLng
-                if (apiKey != null) viewModel.fetchNearbyPlaces(latLng, apiKey, context, termFilterList)
+                if (apiKey != null) {
+                    viewModel.cleanNearbyPlaces()
+                    for (filter in termFilterList) {
+                        viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, filter)
+                    }
+                }
             }
         ) {
             // Marcador de la ubicación seleccionada
@@ -157,8 +171,9 @@ fun MapScreen(
                 nearbyPlaces.forEach { place ->
                     place.geometry?.location?.let { location ->
                         // Verificar si el lugar tiene alguno de los tipos que estamos buscando
-                        val hasMatchingType = place.types?.any { type ->
+                        val hasMatchingType = place.types?.all { type ->
                             type.equals("campground", ignoreCase = true) ||
+                                    type.equals("camping", ignoreCase = true) ||
                                     type.equals("rv_park", ignoreCase = true) ||
                                     type.equals("park", ignoreCase = true)
                         } == true
@@ -168,7 +183,7 @@ fun MapScreen(
                             title = place.name,
                             snippet = place.vicinity,
                             icon = if (hasMatchingType) {
-                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)  // Pintar de verde si tiene el tipo
+                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)  // Pintar de magenta si tiene el tipo
                             } else {
                                 BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)    // Pintar de rojo si no tiene el tipo
                             },
@@ -197,7 +212,11 @@ fun MapScreen(
         Button(
             onClick = {
                 if (apiKey != null) {
-                    viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, termFilterList)
+                    Log.d("MapsViewModel", "Terms: $termFilterList")
+                    viewModel.cleanNearbyPlaces()
+                    for (filter in termFilterList) {
+                        viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, filter)
+                    }
                 }
                 showNearbyPlaces = !showNearbyPlaces // Cambia el estado
                 if (!showNearbyPlaces) {
