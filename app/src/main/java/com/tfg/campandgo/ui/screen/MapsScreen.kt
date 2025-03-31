@@ -117,8 +117,8 @@ fun MapScreen(
             cameraPositionState = cameraPositionState,
             properties = MapProperties(
                 isMyLocationEnabled = true,
-                minZoomPreference = 10f,
-                maxZoomPreference = 20f,
+                minZoomPreference = 1f,
+                maxZoomPreference = 50f,
                 mapType = MapType.TERRAIN
             ),
             uiSettings = uiSettings,
@@ -146,30 +146,6 @@ fun MapScreen(
             if (showNearbyPlaces) {
                 nearbyPlaces.forEach { place ->
                     place.geometry?.location?.let { location ->
-                        Marker(
-                            state = MarkerState(position = LatLng(location.lat, location.lng)),
-                            title = place.name,
-                            snippet = place.vicinity,
-                            icon = if (place.placeId == selectedPlaceId) {
-                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
-                            } else {
-                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                            },
-                            onClick = { marker ->
-                                selectedPlaceId = place.placeId
-                                val apiKey = getApiKeyFromManifest(context) ?: ""
-                                viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey, context)
-                                true
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Mostrar lugares camper cercanos si showNearbyPlaces es true
-            if (showNearbyPlaces) {
-                nearbyPlaces.forEach { place ->
-                    place.geometry?.location?.let { location ->
                         // Verificar si el lugar tiene alguno de los tipos que estamos buscando
                         val hasMatchingType = place.types?.all { type ->
                             type.equals("campground", ignoreCase = true) ||
@@ -183,12 +159,13 @@ fun MapScreen(
                             title = place.name,
                             snippet = place.vicinity,
                             icon = if (hasMatchingType) {
-                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)  // Pintar de magenta si tiene el tipo
+                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
+                            } else if (place.placeId == selectedPlaceId) {
+                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
                             } else {
-                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)    // Pintar de rojo si no tiene el tipo
+                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                             },
                             onClick = { marker ->
-                                // Lógica al hacer clic en el marcador
                                 selectedPlaceId = place.placeId
                                 val apiKey = getApiKeyFromManifest(context) ?: ""
                                 viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey, context)
