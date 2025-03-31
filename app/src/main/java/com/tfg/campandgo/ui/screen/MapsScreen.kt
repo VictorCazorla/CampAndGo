@@ -19,6 +19,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import com.tfg.campandgo.data.model.CamperSite
+import com.tfg.campandgo.data.model.CamperSiteReview
 import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.Prediction
 import com.tfg.campandgo.ui.component.NearbyPlaceItem
@@ -64,6 +66,7 @@ fun MapScreen(
     var selectedPlaceId by remember { mutableStateOf<String?>(null) }
     var termFilterList by remember { mutableStateOf(mutableListOf<String>()) }
 
+
     // Mover la cámara a la ubicación actual al inicio
     LaunchedEffect(currentLocation) {
         currentLocation?.let { location ->
@@ -79,7 +82,12 @@ fun MapScreen(
         if (apiKey != null && showNearbyPlaces) {
             viewModel.cleanNearbyPlaces()
             for (filter in termFilterList) {
-                viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, filter)
+                viewModel.fetchNearbyPlaces(
+                    viewModel.selectedLocation.value!!,
+                    apiKey,
+                    context,
+                    filter
+                )
             }
         }
     }
@@ -100,7 +108,12 @@ fun MapScreen(
                     if (apiKey != null) {
                         viewModel.cleanNearbyPlaces()
                         for (filter in termFilterList) {
-                            viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, filter)
+                            viewModel.fetchNearbyPlaces(
+                                viewModel.selectedLocation.value!!,
+                                apiKey,
+                                context,
+                                filter
+                            )
                         }
                     }
                     cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(it, 15f))
@@ -109,134 +122,159 @@ fun MapScreen(
         }
     }
 
+
+
     Column(modifier = Modifier.fillMaxSize()) {
 
-        // GoogleMap con condicional para mostrar ubicaciones solo cuando showNearbyPlaces sea true
-        GoogleMap(
-            modifier = Modifier.weight(1f),
-            cameraPositionState = cameraPositionState,
-            properties = MapProperties(
-                isMyLocationEnabled = true,
-                minZoomPreference = 10f,
-                maxZoomPreference = 20f,
-                mapType = MapType.TERRAIN
-            ),
-            uiSettings = uiSettings,
-            onMapClick = { latLng ->
-                viewModel.selectedLocation.value = latLng
-                if (apiKey != null) {
-                    viewModel.cleanNearbyPlaces()
-                    for (filter in termFilterList) {
-                        viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, filter)
+        Box(modifier = Modifier.fillMaxSize().weight(0.7f), contentAlignment = Alignment.Center) {
+            // GoogleMap con condicional para mostrar ubicaciones solo cuando showNearbyPlaces sea true
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                properties = MapProperties(
+                    isMyLocationEnabled = true,
+                    minZoomPreference = 1f,
+                    maxZoomPreference = 50f,
+                    mapType = MapType.NORMAL
+                ),
+                uiSettings = uiSettings,
+                onMapClick = { latLng ->
+                    viewModel.selectedLocation.value = latLng
+                    if (apiKey != null) {
+                        viewModel.cleanNearbyPlaces()
+                        for (filter in termFilterList) {
+                            viewModel.fetchNearbyPlaces(
+                                viewModel.selectedLocation.value!!,
+                                apiKey,
+                                context,
+                                filter
+                            )
+                        }
+                    }
+                }
+            ) {
+                // Marcador de la ubicación seleccionada
+                viewModel.selectedLocation.value?.let { location ->
+                    Marker(
+                        state = MarkerState(position = location),
+                        title = "Ubicación seleccionada",
+                        snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${
+                            "%.4f".format(
+                                location.longitude
+                            )
+                        }",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                    )
+                }
+
+                // Mostrar lugares cercanos si showNearbyPlaces es true
+                if (showNearbyPlaces) {
+                    nearbyPlaces.forEach { place ->
+                        place.geometry?.location?.let { location ->
+                            // Verificar si el lugar tiene alguno de los tipos que estamos buscando
+                            val hasMatchingType = place.types?.all { type ->
+                                type.equals("campground", ignoreCase = true) ||
+                                        type.equals("camping", ignoreCase = true) ||
+                                        type.equals("rv_park", ignoreCase = true) ||
+                                        type.equals("park", ignoreCase = true)
+                            } == true
+
+                            Marker(
+                                state = MarkerState(position = LatLng(location.lat, location.lng)),
+                                title = place.name,
+                                snippet = place.vicinity,
+                                icon = if (hasMatchingType) {
+                                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
+                                } else if (place.placeId == selectedPlaceId) {
+                                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+                                } else {
+                                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                                },
+                                onClick = { marker ->
+                                    selectedPlaceId = place.placeId
+                                    val apiKey = getApiKeyFromManifest(context) ?: ""
+                                    viewModel.getPlaceDetailsFromPlaceId(
+                                        place.placeId,
+                                        apiKey,
+                                        context
+                                    )
+                                    true
+                                }
+                            )
+                        }
                     }
                 }
             }
-        ) {
-            // Marcador de la ubicación seleccionada
-            viewModel.selectedLocation.value?.let { location ->
-                Marker(
-                    state = MarkerState(position = location),
-                    title = "Ubicación seleccionada",
-                    snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${"%.4f".format(location.longitude)}",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
-                )
+
+            Column(modifier = Modifier.fillMaxSize().align(
+                Alignment.TopCenter
+            )) {
+                ToggleButtonGrid(onFilterSelected = handleFilterSelected,)
             }
 
-            // Mostrar lugares cercanos si showNearbyPlaces es true
-            if (showNearbyPlaces) {
-                nearbyPlaces.forEach { place ->
-                    place.geometry?.location?.let { location ->
-                        Marker(
-                            state = MarkerState(position = LatLng(location.lat, location.lng)),
-                            title = place.name,
-                            snippet = place.vicinity,
-                            icon = if (place.placeId == selectedPlaceId) {
-                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
-                            } else {
-                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                            },
-                            onClick = { marker ->
-                                selectedPlaceId = place.placeId
-                                val apiKey = getApiKeyFromManifest(context) ?: ""
-                                viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey, context)
-                                true
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Mostrar lugares camper cercanos si showNearbyPlaces es true
-            if (showNearbyPlaces) {
-                nearbyPlaces.forEach { place ->
-                    place.geometry?.location?.let { location ->
-                        // Verificar si el lugar tiene alguno de los tipos que estamos buscando
-                        val hasMatchingType = place.types?.all { type ->
-                            type.equals("campground", ignoreCase = true) ||
-                                    type.equals("camping", ignoreCase = true) ||
-                                    type.equals("rv_park", ignoreCase = true) ||
-                                    type.equals("park", ignoreCase = true)
-                        } == true
-
-                        Marker(
-                            state = MarkerState(position = LatLng(location.lat, location.lng)),
-                            title = place.name,
-                            snippet = place.vicinity,
-                            icon = if (hasMatchingType) {
-                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)  // Pintar de magenta si tiene el tipo
-                            } else {
-                                BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)    // Pintar de rojo si no tiene el tipo
-                            },
-                            onClick = { marker ->
-                                // Lógica al hacer clic en el marcador
-                                selectedPlaceId = place.placeId
-                                val apiKey = getApiKeyFromManifest(context) ?: ""
-                                viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey, context)
-                                true
-                            }
-                        )
-                    }
-                }
+            // Mostrar detalles del lugar seleccionado
+            viewModel.placeDetails.value?.let { place ->
+                PlaceDetailsSection(place = place)
             }
         }
 
-
-        ToggleButtonGrid(onFilterSelected = handleFilterSelected)
-
-        // Mostrar detalles del lugar seleccionado
-        viewModel.placeDetails.value?.let { place ->
-            PlaceDetailsSection(place = place)
-        }
-
-        // Botón para mostrar/ocultar la lista de lugares cercanos
-        Button(
-            onClick = {
-                if (apiKey != null) {
-                    Log.d("MapsViewModel", "Terms: $termFilterList")
-                    viewModel.cleanNearbyPlaces()
-                    for (filter in termFilterList) {
-                        viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, filter)
+        Column(modifier = Modifier.weight(0.3f)) {
+            // Botón para mostrar/ocultar la lista de lugares cercanos
+            Button(
+                onClick = {
+                    if (apiKey != null) {
+                        viewModel.cleanNearbyPlaces()
+                        for (filter in termFilterList) {
+                            viewModel.fetchNearbyPlaces(
+                                viewModel.selectedLocation.value!!,
+                                apiKey,
+                                context,
+                                filter
+                            )
+                        }
                     }
-                }
-                showNearbyPlaces = !showNearbyPlaces // Cambia el estado
-                if (!showNearbyPlaces) {
-                    viewModel.placeDetails.value = null // Limpiar la información del lugar seleccionado
-                }
-                Log.d("MapsViewModel", "Terms: $termFilterList")
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Text(if (showNearbyPlaces) "Ocultar lugares cercanos" else "Mostrar lugares cercanos")
+                    showNearbyPlaces = !showNearbyPlaces
+                    if (!showNearbyPlaces) {
+                        viewModel.placeDetails.value = null
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(if (showNearbyPlaces) "Ocultar lugares cercanos" else "Mostrar lugares cercanos")
+            }
+
+            // Barra de búsqueda y sugerencias
+            SearchBarWithSuggestions(
+                searchQuery = searchQuery,
+                onSearchQueryChange = onSearchQueryChange,
+                suggestions = searchSuggestions,
+                onSuggestionSelected = { prediction ->
+                    onSearch(prediction.place_id)
+                    onSearchQueryChange(prediction.description)
+                    viewModel.selectedLocation.value = null // Limpiar la ubicación seleccionada
+                    viewModel.placeDetails.value =
+                        null // Limpiar la información del lugar seleccionado
+                    showNearbyPlaces = false // Ocultar la lista de lugares cercanos
+                    selectedPlaceId = prediction.place_id // Actualizar el lugar seleccionado
+                },
+                onCenterMap = centerMap,
+                onSearch = handleSearch
+            )
         }
 
         // Lista de lugares cercanos (solo si showNearbyPlaces es true)
         if (showNearbyPlaces) {
-            LazyColumn(modifier = Modifier.height(200.dp)) {
+            LazyColumn(modifier = Modifier.weight(0.3f)) {
                 items(nearbyPlaces) { place ->
                     NearbyPlaceItem(place = place, onPlaceSelected = { selectedPlace ->
-                        val latLng = selectedPlace.geometry?.location?.let { LatLng(it.lat, selectedPlace.geometry.location.lng) }
+                        val latLng = selectedPlace.geometry?.location?.let {
+                            LatLng(
+                                it.lat,
+                                selectedPlace.geometry.location.lng
+                            )
+                        }
 
                         // Actualizar la ubicación seleccionada en ViewModel
                         viewModel.selectedLocation.value = latLng
@@ -246,32 +284,24 @@ fun MapScreen(
                             ?.let { cameraPositionState.move(it) }
 
                         // Obtener detalles del lugar seleccionado
-                        selectedPlaceId = selectedPlace.placeId // Actualizar el lugar seleccionado
+                        selectedPlaceId =
+                            selectedPlace.placeId // Actualizar el lugar seleccionado
                         val apiKey = getApiKeyFromManifest(context) ?: ""
-                        viewModel.getPlaceDetailsFromPlaceId(selectedPlace.placeId, apiKey, context)
+                        viewModel.getPlaceDetailsFromPlaceId(
+                            selectedPlace.placeId,
+                            apiKey,
+                            context
+                        )
                     })
                 }
             }
         }
-
-        // Barra de búsqueda y sugerencias
-        SearchBarWithSuggestions(
-            searchQuery = searchQuery,
-            onSearchQueryChange = onSearchQueryChange,
-            suggestions = searchSuggestions,
-            onSuggestionSelected = { prediction ->
-                onSearch(prediction.place_id)
-                onSearchQueryChange(prediction.description)
-                viewModel.selectedLocation.value = null // Limpiar la ubicación seleccionada
-                viewModel.placeDetails.value = null // Limpiar la información del lugar seleccionado
-                showNearbyPlaces = false // Ocultar la lista de lugares cercanos
-                selectedPlaceId = prediction.place_id // Actualizar el lugar seleccionado
-            },
-            onCenterMap = centerMap,
-            onSearch = handleSearch
-        )
     }
 }
+
+
+
+
 /**
  * Obtiene la API Key de Google Maps desde el archivo `AndroidManifest.xml`.
  *

@@ -29,9 +29,9 @@ fun ToggleButtonGrid(
         Pair("gas_station", Icons.Default.LocalGasStation),
         Pair("supermarket", Icons.Default.LocalGroceryStore),
         Pair("parking", Icons.Default.LocalParking),
-        Pair("camping", Icons.Default.Terrain),
         Pair("laundry", Icons.Default.LocalLaundryService),
-        Pair("rest_stop", Icons.Default.Place)
+        Pair("rest_stop", Icons.Default.Place),
+        Pair("camping", Icons.Default.Terrain)
     )
 
     val campArray = listOf("campground","rv_park","park")
@@ -43,7 +43,7 @@ fun ToggleButtonGrid(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        buttons.chunked(3).forEach { rowButtons ->
+        buttons.chunked(4).forEach { rowButtons ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -82,13 +82,13 @@ fun ToggleButton(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val backgroundColor = if (isSelected) Color.Blue else Color.LightGray
+    val backgroundColor = if (isSelected) Color.Green else Color.Gray
     val contentColor = if (isSelected) Color.White else Color.Black
 
     IconButton(
         onClick = onClick,
         modifier = Modifier
-            .size(64.dp)
+            .size(48.dp)
             .background(backgroundColor, shape = CircleShape)
     ) {
         Icon(
