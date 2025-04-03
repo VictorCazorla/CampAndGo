@@ -2,9 +2,12 @@ package com.tfg.campandgo.ui.screen
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.tfg.campandgo.data.model.CamperSite
 import com.tfg.campandgo.data.model.CamperSiteReview
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
@@ -85,58 +88,32 @@ private fun getApiKeyFromManifest(context: Context): String? {
 
 @Composable
 private fun launchCampsite() {
-    val sampleCamperSite = CamperSite(
-        id = "cs001",
-        name = "Paradise Camping",
-        formatted_address = "Sierra Nevada, California",
-        description = "Un camping espectacular con vistas increíbles a las montañas. Ofrece parcelas espaciosas, zonas de acampada privadas y acceso directo a rutas de senderismo. Instalaciones modernas incluyen baños limpios, duchas con agua caliente y zona de lavandería.",
-        mainImageUrl = "https://example.com/campsite1.jpg",
-        images = listOf(
-            "https://example.com/campsite1.jpg",
-            "https://example.com/campsite2.jpg",
-            "https://example.com/campsite3.jpg",
-            "https://example.com/campsite4.jpg"
-        ),
-        rating = 4.7,
-        reviewCount = 128,
-        amenities = listOf(
-            "Wifi",
-            "Duchas calientes",
-            "Lavandería",
-            "Tienda",
-            "Zona de fogatas",
-            "Piscina",
-            "Parque infantil",
-            "Electricidad",
-            "Agua potable",
-            "Barbacoa"
-        ),
-        reviews = listOf(
-            CamperSiteReview(
-                userName = "María González",
-                rating = 5.0,
-                date = "15/05/2023",
-                comment = "Increíble experiencia familiar. Las instalaciones están impecables y el personal es muy amable. ¡Volveremos seguro!",
-                images = listOf("https://example.com/review1.jpg")
-            ),
-            CamperSiteReview(
-                userName = "Carlos Martínez",
-                rating = 4.5,
-                date = "22/06/2023",
-                comment = "Muy buen camping, aunque la señal de wifi podría mejorar en algunas zonas. Las vistas son espectaculares al amanecer."
-            ),
-            CamperSiteReview(
-                userName = "Ana López",
-                rating = 4.0,
-                date = "03/07/2023",
-                comment = "Bonito lugar pero algo caro para lo que ofrece. Las duchas estaban limpias pero a veces no había agua caliente.",
-                images = listOf(
-                    "https://example.com/review2.jpg",
-                    "https://example.com/review3.jpg"
+
+    var sampleCamperSite = CamperSite("", "", "", "", "", listOf(""), 0.0, 0, listOf(""), listOf(CamperSiteReview("", 0.0, "", "", listOf(""))))
+    val db = Firebase.firestore
+
+    db.collection("camper_sites")
+        .whereEqualTo("id", "long_lat")
+        .get()
+        .addOnSuccessListener { camperSites ->
+            for (camperSite in camperSites) {
+                sampleCamperSite = CamperSite(
+                    id = camperSite.data["id"].toString(),
+                    name = camperSite.data["name"].toString(),
+                    formattedAddress = camperSite.data["formatted_address"].toString(),
+                    description = camperSite.data["description"].toString(),
+                    mainImageUrl = camperSite.data["main_image_url"].toString(),
+                    images = (camperSite["images"] as List<*>).map { it as String },
+                    rating = camperSite.data["rating"].toString().toDouble(),
+                    reviewCount = camperSite.data["review_count"].toString().toInt(),
+                    amenities = (camperSite["amenities"] as List<*>).map { it as String },
+                    reviews = (camperSite["reviews"] as List<*>).map { it as CamperSiteReview }
                 )
-            )
-        )
-    )
+            }
+        }
+        .addOnFailureListener { e ->
+            Log.d("MapsViewModel", "Error searching the camper site", e)
+        }
 
     CamperSiteScreen(
         site = sampleCamperSite,
