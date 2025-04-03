@@ -34,6 +34,9 @@ fun StartScreen(
         verticalArrangement = Arrangement.Center, // Centra los elementos verticalmente
         horizontalAlignment = Alignment.CenterHorizontally // Centra los elementos horizontalmente
     ) {
+
+        HomeScreen()
+
         /**
          * Título de bienvenida.
          * Muestra un texto de introducción al usuario.
