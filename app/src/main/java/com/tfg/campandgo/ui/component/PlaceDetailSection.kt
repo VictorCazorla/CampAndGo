@@ -22,7 +22,7 @@ import com.tfg.campandgo.data.model.PlaceDetails
 fun PlaceDetailsSection(place: PlaceDetails) {
     Surface(
         modifier = Modifier
-            .padding(5.dp)
+            .padding(8.dp)
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant),
