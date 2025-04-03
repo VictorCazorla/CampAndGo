@@ -55,10 +55,15 @@ class MapsViewModel : ViewModel() {
                     searchSuggestions.clear()
                     searchSuggestions.addAll(response.predictions)
                 } else {
-                    Toast.makeText(context, "No se encontraron sugerencias.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "No se encontraron sugerencias.", Toast.LENGTH_SHORT)
+                        .show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "Error buscando ubicaciones: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    "Error buscando ubicaciones: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -73,7 +78,11 @@ class MapsViewModel : ViewModel() {
             try {
                 searchSuggestions.clear()
             } catch (e: Exception) {
-                Toast.makeText(context, "Error cerrando ubicaciones: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    "Error cerrando ubicaciones: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -98,10 +107,15 @@ class MapsViewModel : ViewModel() {
                         selectedLocation.value = LatLng(it.lat, it.lng)
                     }
                 } else {
-                    Toast.makeText(context, "Error obteniendo coordenadas.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Error obteniendo coordenadas.", Toast.LENGTH_SHORT)
+                        .show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "Error obteniendo coordenadas: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    "Error obteniendo coordenadas: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -127,7 +141,11 @@ class MapsViewModel : ViewModel() {
             }
         } catch (e: IOException) {
             e.printStackTrace()
-            Toast.makeText(context, "Error geocodificando la dirección: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                "Error geocodificando la dirección: ${e.message}",
+                Toast.LENGTH_SHORT
+            ).show()
             onResult(null)
         }
     }
@@ -149,15 +167,23 @@ class MapsViewModel : ViewModel() {
                     if (response.status == "OK") {
                         placeDetails.value = response.result
                     } else {
-                        Toast.makeText(context, "Error obteniendo detalles del lugar: ${response.status}", Toast.LENGTH_SHORT).show()
-                        Log.e("MapsViewModel", "Error obteniendo detalles del lugar: ${response.status} - ${response.result}")
+                        Toast.makeText(
+                            context,
+                            "Error obteniendo detalles del lugar: ${response.status}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Log.e(
+                            "MapsViewModel",
+                            "Error obteniendo detalles del lugar: ${response.status} - ${response.result}"
+                        )
                     }
                 } else {
                     Toast.makeText(context, "placeId inválido: $placeId", Toast.LENGTH_SHORT).show()
                     Log.e("MapsViewModel", "placeId inválido: $placeId")
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "Error en la solicitud: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Error en la solicitud: ${e.message}", Toast.LENGTH_SHORT)
+                    .show()
                 Log.e("MapsViewModel", "Excepción en getPlaceDetails: ${e.message}")
             }
         }
@@ -189,11 +215,8 @@ class MapsViewModel : ViewModel() {
                 if (response.status == "OK") {
                     nearbyPlaces.addAll(response.results)
                     nearbyPlaces.forEach { place -> Log.d("MapsViewModel", "Places: $place") }
-                } else {
-                    Toast.makeText(context, "No se encontraron lugares cercanos.", Toast.LENGTH_SHORT).show()
                 }
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error buscando lugares cercanos: ${e.message}", Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
             }
         }
     }

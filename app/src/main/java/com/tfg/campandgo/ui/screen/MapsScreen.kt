@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -75,11 +76,15 @@ fun MapScreen(
         }
     }
 
-    // Función para manejar los filtros seleccionados
     val handleFilterSelected: (List<String>) -> Unit = { filters ->
         termFilterList = filters.toMutableList()
         Log.d("MapsViewModel", "Filtros seleccionados: $termFilterList")
-        if (apiKey != null && showNearbyPlaces) {
+
+        if (termFilterList.isEmpty()) {
+            viewModel.cleanNearbyPlaces()
+            showNearbyPlaces = false
+            viewModel.placeDetails.value = null
+        } else if (apiKey != null && showNearbyPlaces) {
             viewModel.cleanNearbyPlaces()
             for (filter in termFilterList) {
                 viewModel.fetchNearbyPlaces(
@@ -122,14 +127,12 @@ fun MapScreen(
         }
     }
 
-
-
     Column(modifier = Modifier.fillMaxSize()) {
 
         Box(modifier = Modifier.fillMaxSize().weight(0.7f), contentAlignment = Alignment.Center) {
             // GoogleMap con condicional para mostrar ubicaciones solo cuando showNearbyPlaces sea true
             GoogleMap(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().padding(8.dp),
                 cameraPositionState = cameraPositionState,
                 properties = MapProperties(
                     isMyLocationEnabled = true,
@@ -211,36 +214,41 @@ fun MapScreen(
             )) {
                 ToggleButtonGrid(onFilterSelected = handleFilterSelected,)
             }
+        }
 
+        Column() {
             // Mostrar detalles del lugar seleccionado
             viewModel.placeDetails.value?.let { place ->
                 PlaceDetailsSection(place = place)
             }
-        }
 
-        Column(modifier = Modifier.weight(0.3f)) {
             // Botón para mostrar/ocultar la lista de lugares cercanos
             Button(
                 onClick = {
-                    if (apiKey != null) {
-                        viewModel.cleanNearbyPlaces()
-                        for (filter in termFilterList) {
-                            viewModel.fetchNearbyPlaces(
-                                viewModel.selectedLocation.value!!,
-                                apiKey,
-                                context,
-                                filter
-                            )
+                    if (termFilterList.isNotEmpty()) {
+                        if (apiKey != null) {
+                            viewModel.cleanNearbyPlaces()
+                            for (filter in termFilterList) {
+                                viewModel.fetchNearbyPlaces(
+                                    viewModel.selectedLocation.value!!,
+                                    apiKey,
+                                    context,
+                                    filter
+                                )
+                            }
                         }
-                    }
-                    showNearbyPlaces = !showNearbyPlaces
-                    if (!showNearbyPlaces) {
-                        viewModel.placeDetails.value = null
+                        showNearbyPlaces = !showNearbyPlaces
+                        if (!showNearbyPlaces) {
+                            viewModel.placeDetails.value = null
+                        }
+                    } else {
+                        Toast.makeText(context, "Selecciona al menos un filtro primero", Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                    .fillMaxWidth(),
+
+                enabled = termFilterList.isNotEmpty()
             ) {
                 Text(if (showNearbyPlaces) "Ocultar lugares cercanos" else "Mostrar lugares cercanos")
             }
@@ -266,7 +274,7 @@ fun MapScreen(
 
         // Lista de lugares cercanos (solo si showNearbyPlaces es true)
         if (showNearbyPlaces) {
-            LazyColumn(modifier = Modifier.weight(0.3f)) {
+            LazyColumn(modifier = Modifier.weight(0.3f).padding(8.dp)) {
                 items(nearbyPlaces) { place ->
                     NearbyPlaceItem(place = place, onPlaceSelected = { selectedPlace ->
                         val latLng = selectedPlace.geometry?.location?.let {
