@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
@@ -38,19 +39,22 @@ fun SearchBarWithSuggestions(
     onCenterMap: () -> Unit,
     onSearch: () -> Unit
 ) {
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(modifier = Modifier.padding(8.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically, // Alinea verticalmente los elementos
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
                 label = { Text("Buscar ubicación") },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 56.dp), // Establece una altura mínima igual a los botones
             )
 
+            // Botón de búsqueda
             IconButton(
                 onClick = onSearch,
                 modifier = Modifier
@@ -68,6 +72,7 @@ fun SearchBarWithSuggestions(
                 )
             }
 
+            // Botón de centrar mapa
             IconButton(
                 onClick = onCenterMap,
                 modifier = Modifier
@@ -90,7 +95,7 @@ fun SearchBarWithSuggestions(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 200.dp)
+                    .heightIn(max = 500.dp)
             ) {
                 items(suggestions) { prediction ->
                     SuggestionItem(

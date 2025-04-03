@@ -129,7 +129,7 @@ fun MapScreen(
         Box(modifier = Modifier.fillMaxSize().weight(0.7f), contentAlignment = Alignment.Center) {
             // GoogleMap con condicional para mostrar ubicaciones solo cuando showNearbyPlaces sea true
             GoogleMap(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().padding(8.dp),
                 cameraPositionState = cameraPositionState,
                 properties = MapProperties(
                     isMyLocationEnabled = true,
@@ -211,14 +211,15 @@ fun MapScreen(
             )) {
                 ToggleButtonGrid(onFilterSelected = handleFilterSelected,)
             }
+        }
+
+        Column() {
 
             // Mostrar detalles del lugar seleccionado
             viewModel.placeDetails.value?.let { place ->
                 PlaceDetailsSection(place = place)
             }
-        }
 
-        Column(modifier = Modifier.weight(0.3f)) {
             // Botón para mostrar/ocultar la lista de lugares cercanos
             Button(
                 onClick = {
@@ -240,7 +241,7 @@ fun MapScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(8.dp)
             ) {
                 Text(if (showNearbyPlaces) "Ocultar lugares cercanos" else "Mostrar lugares cercanos")
             }
