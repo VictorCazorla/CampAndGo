@@ -79,7 +79,6 @@ fun CamperSiteScreen(
                 )
             }
 
-            // Title overlay
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -100,7 +99,7 @@ fun CamperSiteScreen(
                         color = Color.White
                     )
                     Text(
-                        text = site.formatted_address,
+                        text = site.formattedAddress,
                         style = MaterialTheme.typography.bodyLarge,
                         color = Color.White.copy(alpha = 0.9f)
                     )
