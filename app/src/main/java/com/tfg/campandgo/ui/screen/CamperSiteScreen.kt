@@ -1,5 +1,6 @@
 package com.tfg.campandgo.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +40,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.rememberAsyncImagePainter
 import com.tfg.campandgo.data.model.CamperSite
 import com.tfg.campandgo.data.model.CamperSiteReview
 
@@ -251,7 +254,12 @@ fun CamperSiteScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(Color.LightGray)
                             ) {
-
+                                Image(
+                                    painter = rememberAsyncImagePainter(imageUrl),
+                                    contentDescription = "Site photo",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
                             }
                         }
                     }
