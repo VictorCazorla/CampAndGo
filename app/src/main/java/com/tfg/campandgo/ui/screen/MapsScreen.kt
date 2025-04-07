@@ -315,7 +315,19 @@ fun MapScreen(
     }
 
     // Este es el bypass
-    launchCampsite()
+    //launchCampsite()
+
+
+            AddCamperSiteScreen(
+                onSave = { newCamperSite ->
+                    // Guardar en Firestore
+                    saveCamperSiteToFirestore(newCamperSite)
+                },
+                onCancel = {
+                }
+            )
+
+
 }
 
 /**
@@ -334,6 +346,16 @@ private fun getApiKeyFromManifest(context: Context): String? {
         null
     }
 }
+
+
+
+
+
+
+
+
+
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

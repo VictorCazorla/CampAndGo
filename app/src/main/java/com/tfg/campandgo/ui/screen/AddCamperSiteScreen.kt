@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -70,6 +71,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
 import coil.compose.rememberAsyncImagePainter
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.tfg.campandgo.R
 import com.tfg.campandgo.data.model.CamperSite
 import com.tfg.campandgo.data.model.CamperSiteReview
@@ -363,7 +367,7 @@ fun AddCamperSiteScreen(
 
             // Amenidades
             Text(
-                text = "Amenidades",
+                text = "Comodidades",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -456,5 +460,36 @@ fun AddCamperSiteScreen(
                 }
             }
         )
+    }
+}
+
+fun saveCamperSiteToFirestore(camperSite: CamperSite) {
+    val db = Firebase.firestore
+
+    try {
+        val camperSiteData = hashMapOf(
+            "id" to camperSite.id,
+            "name" to camperSite.name,
+            "formatted_address" to camperSite.formattedAddress,
+            "description" to camperSite.description,
+            "main_image_url" to camperSite.mainImageUrl,
+            "images" to camperSite.images,
+            "rating" to camperSite.rating,
+            "review_count" to camperSite.reviewCount,
+            "amenities" to camperSite.amenities,
+            "reviews" to listOf<DocumentReference>()
+        )
+
+        db.collection("camper_sites")
+            .document(camperSite.id)
+            .set(camperSiteData)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Documento añadido con ID: ${camperSite.id}")
+            }
+            .addOnFailureListener { e ->
+                Log.w("Firestore", "Error añadiendo documento", e)
+            }
+    } catch (e: Exception) {
+        Log.e("Firestore", "Error preparando datos", e)
     }
 }
