@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "250738336886-dv246rbq52j9puvo54tr51nnmnsua6g5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tfg.campandgo",
+            "certificate_hash": "0550c3ccafc4ee804fb191d6320dc0c44e5a5cd7"
+          }
+        },
+        {
           "client_id": "250738336886-3tg9tk6mvr3o53l4tint2aemnbt5i0qc.apps.googleusercontent.com",
           "client_type": 3
         }
