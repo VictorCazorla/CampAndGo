@@ -70,6 +70,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
+import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.ktx.firestore
@@ -82,10 +83,9 @@ import java.util.UUID
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AddCamperSiteScreen(
-    onSave: (CamperSite) -> Unit,
-    onCancel: () -> Unit
-) {
+fun AddCamperSiteScreen() {
+    val navController = rememberNavController()
+
     // Estado del formulario
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
@@ -149,7 +149,10 @@ fun AddCamperSiteScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onCancel) {
+                    IconButton(onClick = {
+                        // No termina de funcionar
+                        navController.popBackStack()
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Cerrar"
@@ -173,7 +176,7 @@ fun AddCamperSiteScreen(
                         amenities = amenities,
                         reviews = emptyList()
                     )
-                    onSave(newCamperSite)
+                    saveCamperSiteToFirestore(newCamperSite)
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = RoundedCornerShape(16.dp),
@@ -487,9 +490,9 @@ fun saveCamperSiteToFirestore(camperSite: CamperSite) {
                 Log.d("Firestore", "Documento añadido con ID: ${camperSite.id}")
             }
             .addOnFailureListener { e ->
-                Log.w("Firestore", "Error añadiendo documento", e)
+                Log.d("Firestore", "Error añadiendo documento", e)
             }
     } catch (e: Exception) {
-        Log.e("Firestore", "Error preparando datos", e)
+        Log.d("Firestore", "Error preparando datos", e)
     }
 }

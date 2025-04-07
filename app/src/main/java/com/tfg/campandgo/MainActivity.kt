@@ -146,7 +146,7 @@ class MainActivity : ComponentActivity() {
 fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
     val navigator = rememberNavController()
 
-    NavHost(navController = navigator, startDestination = "addCamperSite") {
+    NavHost(navController = navigator, startDestination = "start") {
         composable("start") {
             StartScreen(
                 onLoginClick = { navigator.navigate("login") },
@@ -168,18 +168,6 @@ fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
             )
         }
         composable("home") { HomeScreen() }
-
-        composable("addCamperSite") {
-            AddCamperSiteScreen(
-                onSave = { newCamperSite ->
-                    // Guardar en Firestore
-
-                },
-                onCancel = {
-
-                }
-            )
-        }
     }
 }
 

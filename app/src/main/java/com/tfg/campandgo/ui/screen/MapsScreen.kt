@@ -314,20 +314,11 @@ fun MapScreen(
         }
     }
 
-    // Este es el bypass
-    //launchCampsite()
+    // Este es el bypass para ver los sitios camper creados.
+    //LaunchCampsite()
 
-
-            AddCamperSiteScreen(
-                onSave = { newCamperSite ->
-                    // Guardar en Firestore
-                    saveCamperSiteToFirestore(newCamperSite)
-                },
-                onCancel = {
-                }
-            )
-
-
+    // Este es el bypass para ver la creación de sitios camper.
+    AddCamperSiteScreen()
 }
 
 /**
@@ -347,19 +338,9 @@ private fun getApiKeyFromManifest(context: Context): String? {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-private fun launchCampsite() {
+private fun LaunchCampsite() {
 
     var sampleCamperSite by remember { mutableStateOf(
         CamperSite(
@@ -410,7 +391,7 @@ private fun launchCampsite() {
             }
 
         } catch (e: Exception) {
-            Log.e("LaunchCampsite", "Error fetching camper site", e)
+            Log.d("LaunchCampsite", "Error fetching camper site", e)
         }
     }
 
