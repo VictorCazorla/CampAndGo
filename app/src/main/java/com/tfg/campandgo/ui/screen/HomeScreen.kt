@@ -2,6 +2,8 @@ package com.tfg.campandgo.ui.screen
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -21,6 +23,7 @@ import com.tfg.campandgo.ui.component.*
  * @see MapScreen Para la pantalla de visualización del mapa.
  * @see ErrorScreen Para mostrar mensajes de error.
  */
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen() {
     val viewModel: MapsViewModel = viewModel()

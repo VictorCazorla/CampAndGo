@@ -2,9 +2,11 @@ package com.tfg.campandgo
 
 import com.tfg.campandgo.ui.screen.HomeScreen
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,6 +39,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.tfg.campandgo.ui.screen.AddCamperSiteScreen
 import com.tfg.campandgo.ui.screen.LoginScreen
 import com.tfg.campandgo.ui.screen.RegisterScreen
 import com.tfg.campandgo.ui.screen.StartScreen
@@ -51,6 +54,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth // Instancia de Firebase Authentication
     private lateinit var googleSignInClient: GoogleSignInClient // Cliente de inicio de sesión de Google
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         initializeGoogleSignIn()
@@ -92,6 +96,7 @@ class MainActivity : ComponentActivity() {
         startActivityForResult(signInIntent, RC_SIGN_IN)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == RC_SIGN_IN) {
@@ -105,6 +110,7 @@ class MainActivity : ComponentActivity() {
      *
      * @param task Resultado del intento de inicio de sesión de Google.
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun handleSignInResult(task: Task<GoogleSignInAccount>) {
         val account = task.getResult(ApiException::class.java)
         account?.idToken?.let { firebaseAuthWithGoogle(it) }
@@ -115,6 +121,7 @@ class MainActivity : ComponentActivity() {
      *
      * @param idToken Token de Google proporcionado tras el inicio de sesión.
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun firebaseAuthWithGoogle(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential).addOnCompleteListener(this) { task ->
@@ -134,11 +141,12 @@ class MainActivity : ComponentActivity() {
  *
  * @param onGoogleSignInClick Callback que se ejecuta al seleccionar la opción de inicio de sesión con Google.
  */
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
     val navigator = rememberNavController()
 
-    NavHost(navController = navigator, startDestination = "start") {
+    NavHost(navController = navigator, startDestination = "addCamperSite") {
         composable("start") {
             StartScreen(
                 onLoginClick = { navigator.navigate("login") },
@@ -160,6 +168,18 @@ fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
             )
         }
         composable("home") { HomeScreen() }
+
+        composable("addCamperSite") {
+            AddCamperSiteScreen(
+                onSave = { newCamperSite ->
+                    // Guardar en Firestore
+
+                },
+                onCancel = {
+
+                }
+            )
+        }
     }
 }
 
@@ -205,3 +225,4 @@ fun CustomButton(
         }
     }
 }
+

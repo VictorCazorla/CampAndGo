@@ -3,8 +3,10 @@ package com.tfg.campandgo.ui.screen
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,6 +35,8 @@ import com.tfg.campandgo.ui.component.SearchBarWithSuggestions
 import com.tfg.campandgo.ui.component.ToggleButtonGrid
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
 import kotlinx.coroutines.tasks.await
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * Pantalla que muestra un mapa interactivo con funcionalidades de búsqueda y visualización de lugares cercanos.
@@ -52,6 +56,7 @@ import kotlinx.coroutines.tasks.await
  * @param nearbyPlaces Lista de lugares cercanos.
  * @param viewModel El ViewModel que gestiona la lógica de la pantalla.
  */
+@RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("MutableCollectionMutableState")
 @Composable
 fun MapScreen(
@@ -330,6 +335,7 @@ private fun getApiKeyFromManifest(context: Context): String? {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun launchCampsite() {
 
@@ -363,16 +369,24 @@ private fun launchCampsite() {
                     amenities = camperSite.get("amenities") as? List<String> ?: listOf(),
                     reviews = (camperSite.get("reviews") as? List<DocumentReference>)?.map {
                         val reviewDoc = it.get().await()
+
+                        val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
                         CamperSiteReview(
                             userName = reviewDoc.getString("user_name") ?: "",
                             rating = reviewDoc.getDouble("rating") ?: 0.0,
                             comment = reviewDoc.getString("comment") ?: "",
-                            date = reviewDoc.getDate("date").toString(),
+                            date = reviewDoc.getDate("date")?.let { date ->
+                                date.toInstant()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+                                    .format(formatter)
+                            } ?: "",
                             images = reviewDoc.get("images") as? List<String> ?: listOf()
                         )
                     } ?: listOf()
                 )
             }
+
         } catch (e: Exception) {
             Log.e("LaunchCampsite", "Error fetching camper site", e)
         }

@@ -31,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,13 +58,33 @@ fun CamperSiteScreen(
             .verticalScroll(scrollState)
             .background(Color(0xFFF5F5F5))
     ) {
-        // Header with back button and title
+        // Header with image and back button
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(250.dp)
-                .background(Color(0xFF3F51B5))
         ) {
+            // Main header image
+            Image(
+                painter = rememberAsyncImagePainter(site.mainImageUrl),
+                contentDescription = "Campsite header image",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            // Dark gradient overlay at bottom for text readability
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomStart)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
+                            startY = 0f,
+                            endY = 100f
+                        )
+                    )
+            )
 
             // Back button
             IconButton(
@@ -82,31 +101,22 @@ fun CamperSiteScreen(
                 )
             }
 
-            Box(
+            // Title and address
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
                     .align(Alignment.BottomStart)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
-                            startY = 0f,
-                            endY = 100f
-                        )
-                    )
                     .padding(16.dp)
             ) {
-                Column {
-                    Text(
-                        text = site.name,
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = Color.White
-                    )
-                    Text(
-                        text = site.formattedAddress,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White.copy(alpha = 0.9f)
-                    )
-                }
+                Text(
+                    text = site.name,
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = Color.White
+                )
+                Text(
+                    text = site.formattedAddress,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
             }
         }
 
@@ -114,7 +124,7 @@ fun CamperSiteScreen(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Rating and price box
+            // Rating and review count box
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -151,7 +161,7 @@ fun CamperSiteScreen(
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Price box
+                // Review count box
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -174,7 +184,7 @@ fun CamperSiteScreen(
                 }
             }
 
-            // Description box
+            // Description section
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -195,7 +205,7 @@ fun CamperSiteScreen(
                 }
             }
 
-            // Amenities box
+            // Amenities section
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -212,6 +222,8 @@ fun CamperSiteScreen(
 
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         site.amenities.forEach { amenity ->
                             Box(
@@ -230,7 +242,7 @@ fun CamperSiteScreen(
                 }
             }
 
-            // Photo gallery box
+            // Photo gallery section
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -252,7 +264,6 @@ fun CamperSiteScreen(
                                 modifier = Modifier
                                     .size(150.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(Color.LightGray)
                             ) {
                                 Image(
                                     painter = rememberAsyncImagePainter(imageUrl),
@@ -266,7 +277,7 @@ fun CamperSiteScreen(
                 }
             }
 
-            // Reviews box
+            // Reviews section
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -301,7 +312,7 @@ fun CamperSiteScreen(
         }
     }
 
-    // Floating book button
+    // Floating action button
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -319,7 +330,7 @@ fun CamperSiteScreen(
             shape = RoundedCornerShape(12.dp)
         ) {
             Text(
-                text = "Open Now",
+                text = "Book Now",
                 style = MaterialTheme.typography.titleMedium
             )
         }
@@ -337,7 +348,7 @@ fun ReviewItem(review: CamperSiteReview) {
                 .size(40.dp)
                 .background(Color.LightGray, CircleShape)
         ) {
-            // User avatar could go here
+            // User avatar placeholder
         }
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -388,7 +399,7 @@ fun ReviewItem(review: CamperSiteReview) {
                         ) {
                             Image(
                                 painter = rememberAsyncImagePainter(imageUrl),
-                                contentDescription = "Site photo",
+                                contentDescription = "Review photo",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -399,5 +410,3 @@ fun ReviewItem(review: CamperSiteReview) {
         }
     }
 }
-
-

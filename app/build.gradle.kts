@@ -14,7 +14,7 @@ android {
 
     defaultConfig {
         applicationId = "com.tfg.campandgo"
-        minSdk = 24
+        minSdk = 25
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -107,6 +107,7 @@ dependencies {
 
     // Lifecycle
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.compose.material)
 
     // Testing
     testImplementation(libs.junit)
