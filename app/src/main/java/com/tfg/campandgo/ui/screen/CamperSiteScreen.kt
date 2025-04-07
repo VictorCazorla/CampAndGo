@@ -386,7 +386,12 @@ fun ReviewItem(review: CamperSiteReview) {
                                 .size(80.dp)
                                 .clip(RoundedCornerShape(4.dp))
                         ) {
-
+                            Image(
+                                painter = rememberAsyncImagePainter(imageUrl),
+                                contentDescription = "Site photo",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         }
                     }
                 }
