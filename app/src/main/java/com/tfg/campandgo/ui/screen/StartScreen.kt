@@ -35,7 +35,7 @@ fun StartScreen(
         horizontalAlignment = Alignment.CenterHorizontally // Centra los elementos horizontalmente
     ) {
 
-        HomeScreen()
+        //HomeScreen()
 
         /**
          * Título de bienvenida.

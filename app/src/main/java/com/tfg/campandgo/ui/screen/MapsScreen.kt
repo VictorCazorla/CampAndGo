@@ -19,6 +19,8 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.google.maps.android.compose.*
 import com.tfg.campandgo.data.model.CamperSite
 import com.tfg.campandgo.data.model.CamperSiteReview
@@ -29,6 +31,7 @@ import com.tfg.campandgo.ui.component.PlaceDetailsSection
 import com.tfg.campandgo.ui.component.SearchBarWithSuggestions
 import com.tfg.campandgo.ui.component.ToggleButtonGrid
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
+import kotlinx.coroutines.tasks.await
 
 /**
  * Pantalla que muestra un mapa interactivo con funcionalidades de búsqueda y visualización de lugares cercanos.
@@ -66,7 +69,6 @@ fun MapScreen(
     var showNearbyPlaces by remember { mutableStateOf(false) }
     var selectedPlaceId by remember { mutableStateOf<String?>(null) }
     var termFilterList by remember { mutableStateOf(mutableListOf<String>()) }
-
 
     // Mover la cámara a la ubicación actual al inicio
     LaunchedEffect(currentLocation) {
@@ -305,10 +307,9 @@ fun MapScreen(
             }
         }
     }
+
+    launchCampsite()
 }
-
-
-
 
 /**
  * Obtiene la API Key de Google Maps desde el archivo `AndroidManifest.xml`.
@@ -325,4 +326,117 @@ private fun getApiKeyFromManifest(context: Context): String? {
         e.printStackTrace()
         null
     }
+}
+
+@Composable
+private fun launchCampsite() {
+
+    var sampleCamperSite by remember { mutableStateOf(
+        CamperSite(
+            "", "", "", "", "", listOf(""), 0.0, 0, listOf(""), listOf(CamperSiteReview("", 0.0, "", "", listOf())))
+    ) }
+    val db = Firebase.firestore
+
+    // Versión 1
+    /*db.collection("camper_sites")
+        .get()
+        .addOnSuccessListener { camperSites ->
+            if (camperSites.isEmpty) {
+                Log.d("LaunchCampsite", "No camper site found")
+            }
+
+            for (camperSite in camperSites) {
+                sampleCamperSite = CamperSite(
+                    id = camperSite.data["id"].toString(),
+                    name = camperSite.data["name"].toString(),
+                    formattedAddress = camperSite.data["formatted_address"].toString(),
+                    description = camperSite.data["description"].toString(),
+                    mainImageUrl = camperSite.data["main_image_url"].toString(),
+                    images = (camperSite["images"] as List<*>).map { it as String },
+                    rating = camperSite.data["rating"].toString().toDouble(),
+                    reviewCount = camperSite.data["review_count"].toString().toInt(),
+                    amenities = (camperSite["amenities"] as List<*>).map { it as String },
+                    reviews = (camperSite["reviews"] as List<*>).map { it as CamperSiteReview }
+                )
+            }
+        }
+        .addOnFailureListener { e ->
+            Log.d("MapsViewModel", "Error searching the camper site", e)
+        }*/
+    // Usar un LaunchedEffect para realizar la consulta solo una vez
+    LaunchedEffect(Unit) {
+        // Versión 2
+        /*db.collection("camper_sites")
+            .whereEqualTo("id", "long_lat")
+            .get()
+            .addOnSuccessListener { camperSites ->
+                if (camperSites.isEmpty) {
+                    Log.d("MapsViewModel", "No camper site found")
+                    return@addOnSuccessListener
+                }
+
+                val camperSite = camperSites.first() // Asumiendo que hay al menos un resultado
+                sampleCamperSite = CamperSite(
+                    id = camperSite.data["id"].toString(),
+                    name = camperSite.data["name"].toString(),
+                    formattedAddress = camperSite.data["formatted_address"].toString(),
+                    description = camperSite.data["description"].toString(),
+                    mainImageUrl = camperSite.data["main_image_url"].toString(),
+                    images = (camperSite["images"] as List<*>).map { it as String },
+                    rating = camperSite.data["rating"].toString().toDouble(),
+                    reviewCount = camperSite.data["review_count"].toString().toInt(),
+                    amenities = (camperSite["amenities"] as List<*>).map { it as String },
+                    reviews = (camperSite["reviews"] as List<*>).map { it as CamperSiteReview }
+                )
+            }
+            .addOnFailureListener { e ->
+                Log.d("MapsViewModel", "Error searching the camper site", e)
+            }*/
+
+        // Versión 3
+        try {
+            val camperSitesSnapshot = db.collection("camper_sites")
+                .get()
+                .await()  // Espera respuesta de manera síncrona
+
+            Log.d("LaunchCampsite", "Camper site: $camperSitesSnapshot")
+
+            if (camperSitesSnapshot.isEmpty) {
+                Log.d("LaunchCampsite", "No camper site found")
+            } else {
+                Log.d("LaunchCampsite", "Camper site: $sampleCamperSite")
+                val camperSite = camperSitesSnapshot.documents.first()
+                Log.d("LaunchCampsite", "Camper site: $camperSite")
+                sampleCamperSite = CamperSite(
+                    id = camperSite.getString("id") ?: "",
+                    name = camperSite.getString("name") ?: "",
+                    formattedAddress = camperSite.getString("formatted_address") ?: "",
+                    description = camperSite.getString("description") ?: "",
+                    mainImageUrl = camperSite.getString("main_image_url") ?: "",
+                    images = camperSite.get("images") as? List<String> ?: listOf(),
+                    rating = camperSite.getDouble("rating") ?: 0.0,
+                    reviewCount = camperSite.getLong("review_count")?.toInt() ?: 0,
+                    amenities = camperSite.get("amenities") as? List<String> ?: listOf(),
+                    reviews = (camperSite.get("reviews") as? List<Map<String, Any>>)?.map {
+                        CamperSiteReview(
+                            userName = it["user_name"] as? String ?: "",
+                            rating = (it["rating"] as? Double) ?: 0.0,
+                            comment = it["comment"] as? String ?: "",
+                            date = it["date"] as? String ?: "",
+                            images = it["images"] as? List<String> ?: listOf()
+                        )
+                    } ?: listOf()
+                )
+                Log.d("LaunchCampsite", "Camper site: $sampleCamperSite")
+            }
+        } catch (e: Exception) {
+            Log.e("LaunchCampsite", "Error fetching camper site", e)
+        }
+    }
+
+    CamperSiteScreen(
+        site = sampleCamperSite,
+        onBackClick = { /* Lógica para volver atrás */ },
+        onBookClick = { /* Lógica para reservar */ }
+    )
 }
