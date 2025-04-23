@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -48,6 +49,7 @@ import java.time.format.DateTimeFormatter
  * - Detalles del lugar seleccionado.
  * - Un grid de botones para filtrar lugares cercanos.
  *
+ * @param navigator Navegador que permite moverse entre pantallas.
  * @param currentLocation La ubicación actual del usuario.
  * @param searchQuery El texto de búsqueda ingresado por el usuario.
  * @param onSearchQueryChange Callback que se ejecuta cuando cambia el texto de búsqueda.
@@ -60,6 +62,7 @@ import java.time.format.DateTimeFormatter
 @SuppressLint("MutableCollectionMutableState")
 @Composable
 fun MapScreen(
+    navigator: NavController,
     currentLocation: LatLng?,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
@@ -169,12 +172,15 @@ fun MapScreen(
                     Marker(
                         state = MarkerState(position = location),
                         title = "Ubicación seleccionada",
-                        snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${
-                            "%.4f".format(
-                                location.longitude
-                            )
-                        }",
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                        snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${"%.4f".format(location.longitude)}",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
+                        onClick = {
+                            val latitude = "%.4f".format(location.latitude)
+                            val longitude = "%.4f".format(location.longitude)
+                            val route = "add_camper_site/$latitude/$longitude"
+                            navigator.navigate(route)
+                            true // consume el evento
+                        }
                     )
                 }
 
@@ -316,9 +322,6 @@ fun MapScreen(
 
     // Este es el bypass para ver los sitios camper creados.
     //LaunchCampsite()
-
-    // Este es el bypass para ver la creación de sitios camper.
-    AddCamperSiteScreen()
 }
 
 /**
@@ -338,6 +341,9 @@ private fun getApiKeyFromManifest(context: Context): String? {
     }
 }
 
+/**
+ * Función pendiente de correcta implementación.
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun LaunchCampsite() {

@@ -78,12 +78,19 @@ import com.google.firebase.ktx.Firebase
 import com.tfg.campandgo.R
 import com.tfg.campandgo.data.model.CamperSite
 import com.tfg.campandgo.data.model.CamperSiteReview
+import com.tfg.campandgo.ui.viewmodel.MapsViewModel
 import java.util.UUID
 
+/**
+ * Pantalla de creación de los sitios camper.
+ *
+ * @param latitude Latitud.
+ * @param longitude Longitud.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AddCamperSiteScreen() {
+fun AddCamperSiteScreen(latitude: Double, longitude: Double) {
     val navController = rememberNavController()
 
     // Estado del formulario
@@ -466,6 +473,11 @@ fun AddCamperSiteScreen() {
     }
 }
 
+/**
+ * Guarda el sitio camper en Firestore.
+ *
+ * @param camperSite El CamperSite que es almacenado.
+ */
 fun saveCamperSiteToFirestore(camperSite: CamperSite) {
     val db = Firebase.firestore
 

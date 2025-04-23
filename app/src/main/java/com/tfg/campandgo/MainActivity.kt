@@ -24,9 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -39,6 +42,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.tfg.campandgo.ui.navigation.Routes
 import com.tfg.campandgo.ui.screen.AddCamperSiteScreen
 import com.tfg.campandgo.ui.screen.LoginScreen
 import com.tfg.campandgo.ui.screen.RegisterScreen
@@ -53,6 +57,7 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var auth: FirebaseAuth // Instancia de Firebase Authentication
     private lateinit var googleSignInClient: GoogleSignInClient // Cliente de inicio de sesión de Google
+    private lateinit var navigator: NavController
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -126,7 +131,7 @@ class MainActivity : ComponentActivity() {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential).addOnCompleteListener(this) { task ->
             if (task.isSuccessful) {
-                setContent { CampAndGoTheme { HomeScreen() } }
+                setContent { CampAndGoTheme { HomeScreen(navigator = navigator) } }
             }
         }
     }
@@ -146,28 +151,40 @@ class MainActivity : ComponentActivity() {
 fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
     val navigator = rememberNavController()
 
-    NavHost(navController = navigator, startDestination = "start") {
-        composable("start") {
+    NavHost(navController = navigator, startDestination = Routes.START) {
+        composable(Routes.START) {
             StartScreen(
-                onLoginClick = { navigator.navigate("login") },
+                onLoginClick = { navigator.navigate(Routes.LOGIN) },
                 onGoogleSignInClick = onGoogleSignInClick,
-                onRegisterClick = { navigator.navigate("register") }
+                onRegisterClick = { navigator.navigate(Routes.REGISTER) }
             )
         }
-        composable("login") {
+        composable(Routes.LOGIN) {
             LoginScreen(
-                onLoginClick = { navigator.navigate("home") },
-                onRegisterClick = { navigator.navigate("register") },
+                onLoginClick = { navigator.navigate(Routes.HOME) },
+                onRegisterClick = { navigator.navigate(Routes.REGISTER) },
                 onGoogleSignInClick = onGoogleSignInClick
             )
         }
-        composable("register") {
+        composable(Routes.REGISTER) {
             RegisterScreen(
-                onRegisterClick = { navigator.navigate("login") },
-                onBackToLoginClick = { navigator.navigate("login") }
+                onRegisterClick = { navigator.navigate(Routes.LOGIN) },
+                onBackToLoginClick = { navigator.navigate(Routes.LOGIN) }
             )
         }
-        composable("home") { HomeScreen() }
+        composable(Routes.HOME) { HomeScreen(navigator = navigator) }
+        composable(
+            route = Routes.ADD_CAMPER_SITE,
+            arguments = listOf(
+                navArgument("latitude") { type = NavType.StringType },
+                navArgument("longitude") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val latitude = backStackEntry.arguments?.getString("latitude")?.toDoubleOrNull() ?: 0.0
+            val longitude = backStackEntry.arguments?.getString("longitude")?.toDoubleOrNull() ?: 0.0
+
+            AddCamperSiteScreen(latitude = latitude, longitude = longitude)
+        }
     }
 }
 
