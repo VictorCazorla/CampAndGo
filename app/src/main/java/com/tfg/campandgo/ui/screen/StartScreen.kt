@@ -1,5 +1,7 @@
 package com.tfg.campandgo.ui.screen
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -21,6 +23,7 @@ import com.tfg.campandgo.CustomButton
  * @param onGoogleSignInClick Callback que se ejecuta cuando el usuario selecciona "Login with Google".
  * @param onRegisterClick Callback que se ejecuta cuando el usuario selecciona "Register".
  */
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun StartScreen(
     onLoginClick: () -> Unit,
@@ -34,8 +37,6 @@ fun StartScreen(
         verticalArrangement = Arrangement.Center, // Centra los elementos verticalmente
         horizontalAlignment = Alignment.CenterHorizontally // Centra los elementos horizontalmente
     ) {
-
-        //HomeScreen()
 
         /**
          * Título de bienvenida.

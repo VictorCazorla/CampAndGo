@@ -7,6 +7,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
 import com.tfg.campandgo.ui.component.*
 
@@ -19,13 +20,14 @@ import com.tfg.campandgo.ui.component.*
  * - Realizar búsquedas de ubicaciones y mostrar sugerencias.
  * - Mostrar el mapa con la ubicación actual y los lugares cercanos.
  *
+ * @param navigator Navegador que permite moverse entre pantallas.
  * @see MapsViewModel Para más detalles sobre el ViewModel utilizado.
  * @see MapScreen Para la pantalla de visualización del mapa.
  * @see ErrorScreen Para mostrar mensajes de error.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(navigator: NavController) {
     val viewModel: MapsViewModel = viewModel()
     val context = LocalContext.current
     val apiKey = remember { getApiKeyFromManifest(context) }
@@ -55,6 +57,7 @@ fun HomeScreen() {
 
         // Mostrar la pantalla del mapa con los datos actuales
         MapScreen(
+            navigator = navigator,
             currentLocation = viewModel.selectedLocation.value,
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },

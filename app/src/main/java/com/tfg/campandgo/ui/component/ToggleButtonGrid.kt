@@ -38,14 +38,13 @@ fun ToggleButtonGrid(
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+            .fillMaxWidth().padding(10.dp,10.dp,30.dp,10.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         buttons.chunked(4).forEach { rowButtons ->
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(10.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 rowButtons.forEach { (key, icon) ->
@@ -88,14 +87,14 @@ fun ToggleButton(
     IconButton(
         onClick = onClick,
         modifier = Modifier
-            .size(48.dp)
+            .size(36.dp)
             .background(backgroundColor, shape = CircleShape)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = contentColor,
-            modifier = Modifier.size(32.dp)
+            modifier = Modifier.size(28.dp)
         )
     }
 }
