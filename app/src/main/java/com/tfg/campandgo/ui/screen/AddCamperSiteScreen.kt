@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -111,6 +112,21 @@ fun AddCamperSiteScreen(
     // Contexto
     val context = LocalContext.current
 
+    // Función para validar campos
+    fun validateFields(): Boolean {
+        return when {
+            name.isBlank() -> {
+                Toast.makeText(context,"Por favor, ingresa el nombre del sitio", Toast.LENGTH_SHORT).show()
+                false
+            }
+            address.isBlank() -> {
+                Toast.makeText(context,"Por favor, ingresa la dirección del sitio", Toast.LENGTH_SHORT).show()
+                false
+            }
+            else -> true
+        }
+    }
+
     // Preparar la URI para la imagen a capturar
     fun createImageUri(): Uri {
         val contentResolver = context.contentResolver
@@ -184,20 +200,22 @@ fun AddCamperSiteScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    val newCamperSite = CamperSite(
-                        id = UUID.randomUUID().toString(),
-                        name = name,
-                        formattedAddress = address,
-                        description = description,
-                        mainImageUrl = images.firstOrNull()?.toString() ?: "",
-                        images = images.map { it.toString() },
-                        rating = rating,
-                        reviewCount = 0,
-                        amenities = amenities,
-                        reviews = emptyList()
-                    )
-                    saveCamperSiteToFirestore(newCamperSite)
-                    navigator.popBackStack() // Vuelve atrás después de guardar
+                    if(validateFields()) {
+                        val newCamperSite = CamperSite(
+                            id = UUID.randomUUID().toString(),
+                            name = name,
+                            formattedAddress = address,
+                            description = description,
+                            mainImageUrl = images.firstOrNull()?.toString() ?: "",
+                            images = images.map { it.toString() },
+                            rating = rating,
+                            reviewCount = 0,
+                            amenities = amenities,
+                            reviews = emptyList()
+                        )
+                        saveCamperSiteToFirestore(newCamperSite)
+                        navigator.popBackStack() // Vuelve atrás después de guardar
+                    }
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = RoundedCornerShape(16.dp),
