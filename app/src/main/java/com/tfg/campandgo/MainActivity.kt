@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -57,7 +56,8 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var auth: FirebaseAuth // Instancia de Firebase Authentication
     private lateinit var googleSignInClient: GoogleSignInClient // Cliente de inicio de sesión de Google
-    private lateinit var navigator: NavController
+
+    private var isUserLoggedIn by mutableStateOf(false)
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,6 +75,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CampAndGoTheme {
                 NavigatorHub(
+                    isUserLoggedIn = isUserLoggedIn,
                     onGoogleSignInClick = { startGoogleSignIn() }
                 )
             }
@@ -131,7 +132,7 @@ class MainActivity : ComponentActivity() {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential).addOnCompleteListener(this) { task ->
             if (task.isSuccessful) {
-                setContent { CampAndGoTheme { HomeScreen(navigator = navigator) } }
+                isUserLoggedIn = true
             }
         }
     }
@@ -148,8 +149,19 @@ class MainActivity : ComponentActivity() {
  */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun NavigatorHub(onGoogleSignInClick: () -> Unit) {
+fun NavigatorHub(
+    isUserLoggedIn: Boolean,
+    onGoogleSignInClick: () -> Unit
+) {
     val navigator = rememberNavController()
+
+    LaunchedEffect(isUserLoggedIn) {
+        if (isUserLoggedIn) {
+            navigator.navigate(Routes.HOME) {
+                popUpTo(0) // Limpia el back stack completo
+            }
+        }
+    }
 
     NavHost(navController = navigator, startDestination = Routes.START) {
         composable(Routes.START) {
