@@ -80,6 +80,7 @@ import com.tfg.campandgo.data.model.CamperSite
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.DropdownMenuItem
 import androidx.navigation.NavController
+import java.util.Locale
 import java.util.UUID
 
 /**
@@ -396,13 +397,14 @@ fun AddCamperSiteScreen(
                     Slider(
                         value = rating.toFloat(),
                         onValueChange = { newValue ->
-                            rating = "%.2f".format(newValue).toDouble()
+                            rating = "%.2f".format(Locale.US, newValue).toDouble()
                         },
                         valueRange = 0f..5f,
-                        steps = 100,
+                        steps = 40,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
+                            .height(48.dp)
                     )
                 }
             }
