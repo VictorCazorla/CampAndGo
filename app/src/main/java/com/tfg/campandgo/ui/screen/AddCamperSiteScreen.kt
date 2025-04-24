@@ -58,7 +58,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -69,16 +68,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.IconButton
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.tfg.campandgo.R
 import com.tfg.campandgo.data.model.CamperSite
-import com.tfg.campandgo.data.model.CamperSiteReview
-import com.tfg.campandgo.ui.viewmodel.MapsViewModel
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.DropdownMenuItem
+import androidx.navigation.NavController
 import java.util.UUID
 
 /**
@@ -90,9 +90,11 @@ import java.util.UUID
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AddCamperSiteScreen(latitude: Double, longitude: Double) {
-    val navController = rememberNavController()
-
+fun AddCamperSiteScreen(
+    latitude: Double,
+    longitude: Double,
+    navigator: NavController
+) {
     // Estado del formulario
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
@@ -141,6 +143,8 @@ fun AddCamperSiteScreen(latitude: Double, longitude: Double) {
 
     // Diálogo para añadir amenidades
     var showAmenityDialog by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+    val amenityOptions = listOf("Wifi", "Agua potable", "Electricidad", "Duchas", "Lavandería", "Baños", "Zona de picnic", "Barbacoa", "Piscina", "Área infantil", "Aparcamiento", "Tienda", "Restaurante", "Recepción 24h", "Alquiler de bicicletas", "Zona para mascotas")
 
     Scaffold(
         topBar = {
@@ -156,10 +160,19 @@ fun AddCamperSiteScreen(latitude: Double, longitude: Double) {
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        // No termina de funcionar
-                        navController.popBackStack()
-                    }) {
+                    IconButton(
+                        onClick = {
+                            // Navega hacia atrás con manejo de errores
+                            try {
+                                if (!navigator.popBackStack()) {
+                                    navigator.navigateUp()
+                                }
+                            } catch (e: Exception) {
+                                Log.e("Navigation", "Error al navegar hacia atrás", e)
+                                navigator.navigateUp()
+                            }
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Cerrar"
@@ -184,6 +197,7 @@ fun AddCamperSiteScreen(latitude: Double, longitude: Double) {
                         reviews = emptyList()
                     )
                     saveCamperSiteToFirestore(newCamperSite)
+                    navigator.popBackStack() // Vuelve atrás después de guardar
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = RoundedCornerShape(16.dp),
@@ -363,9 +377,11 @@ fun AddCamperSiteScreen(latitude: Double, longitude: Double) {
 
                     Slider(
                         value = rating.toFloat(),
-                        onValueChange = { rating = it.toDouble() },
+                        onValueChange = { newValue ->
+                            rating = "%.2f".format(newValue).toDouble()
+                        },
                         valueRange = 0f..5f,
-                        steps = 4,
+                        steps = 100,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
@@ -375,9 +391,9 @@ fun AddCamperSiteScreen(latitude: Double, longitude: Double) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Amenidades
+            // Servicios
             Text(
-                text = "Comodidades",
+                text = "Servicio",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -418,41 +434,95 @@ fun AddCamperSiteScreen(latitude: Double, longitude: Double) {
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Añadir Amenidad")
+                        Text("Añadir servicio")
                     }
                 }
             }
         }
     }
 
-    // Diálogo para añadir amenidad
+
     if (showAmenityDialog) {
         AlertDialog(
             onDismissRequest = { showAmenityDialog = false },
-            title = { Text("Añadir servicios", style = MaterialTheme.typography.titleLarge) },
+            title = { Text("Seleccionar servicios", style = MaterialTheme.typography.titleLarge) },
             text = {
-                OutlinedTextField(
-                    value = newAmenity,
-                    onValueChange = { newAmenity = it },
-                    label = { Text("Nombre del servicio") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                )
+                Column {
+                    // Menú desplegable
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { expanded = true }
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = if (newAmenity.isEmpty()) "Selecciona un servicio" else newAmenity,
+                            color = if (newAmenity.isEmpty()) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            else MaterialTheme.colorScheme.onSurface
+                        )
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            amenityOptions.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        newAmenity = option
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // Mostrar servicios seleccionados
+                    if (amenities.isNotEmpty()) {
+                        Text(
+                            text = "Servicios seleccionados:",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
+
+                        FlowRow(
+                            modifier = Modifier.padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            amenities.forEach { amenity ->
+                                AssistChip(
+                                    onClick = { amenities = amenities - amenity },
+                                    label = { Text(amenity) },
+                                    colors = AssistChipDefaults.assistChipColors(
+                                        leadingIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    ),
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = "Eliminar",
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        if (newAmenity.isNotBlank()) {
+                        if (newAmenity.isNotBlank() && !amenities.contains(newAmenity)) {
                             amenities = amenities + newAmenity
                             newAmenity = ""
-                            showAmenityDialog = false
                         }
                     },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
+                    enabled = newAmenity.isNotBlank() && !amenities.contains(newAmenity),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Añadir")
                 }
@@ -466,7 +536,7 @@ fun AddCamperSiteScreen(latitude: Double, longitude: Double) {
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
-                    Text("Cancelar")
+                    Text("Cerrar")
                 }
             }
         )

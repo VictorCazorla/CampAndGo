@@ -270,7 +270,7 @@ fun MapScreen(
                     }
                 },
                 modifier = Modifier
-                    .fillMaxWidth(),
+                    .fillMaxWidth().padding(0.dp, 8.dp, 0.dp, 0.dp),
 
                 enabled = termFilterList.isNotEmpty()
             ) {
