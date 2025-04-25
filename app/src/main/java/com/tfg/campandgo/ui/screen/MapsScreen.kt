@@ -194,6 +194,32 @@ fun MapScreen(
                     )
                 }
 
+                // ---------- Prueba info camper site ----------
+                // Pendiente de serializar el objeto.
+                val db = Firebase.firestore
+                val camperSite = db.collection("camper_sites")
+                    .document("ZFV9wQfSEuhAQUKfHIqD")
+                    .get()
+                    .addOnSuccessListener {
+                        Log.d("Firestore", "Documento extraído")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.d("Firestore", "Error extrayendo el documento", e)
+                    }
+                val pintoLocation = LatLng(40.2415, -3.7004)
+                Marker(
+                    state = MarkerState(position = pintoLocation),
+                    title = "Pinto Camper Spot",
+                    snippet = "Lat: 40.2415, Lng: -3.7004",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE),
+                    onClick = {
+                        val route = "camper_site/$camperSite"
+                        navigator.navigate(route)
+                        true
+                    }
+                )
+                // ----------
+
                 // Mostrar lugares cercanos si showNearbyPlaces es true
                 if (showNearbyPlaces) {
                     nearbyPlaces.forEach { place ->

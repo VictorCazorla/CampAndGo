@@ -43,6 +43,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.tfg.campandgo.ui.navigation.Routes
 import com.tfg.campandgo.ui.screen.AddCamperSiteScreen
+import com.tfg.campandgo.ui.screen.CamperSiteScreen
 import com.tfg.campandgo.ui.screen.LoginScreen
 import com.tfg.campandgo.ui.screen.RegisterScreen
 import com.tfg.campandgo.ui.screen.StartScreen
@@ -185,6 +186,19 @@ fun NavigatorHub(
             )
         }
         composable(Routes.HOME) { HomeScreen(navigator = navigator) }
+        // ---------- Pendiente de hacer la serialización ----------
+        composable(
+            route = Routes.CAMPER_SITE,
+            arguments = listOf(
+                navArgument("camperSite") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            // Comentados para que no den error al commit
+            //val camperSite = backStackEntry.arguments?.getObject("camperSite")
+
+            //CamperSiteScreen(site = camperSite, onBackClick = , onBookClick = )
+        }
+        // ----------
         composable(
             route = Routes.ADD_CAMPER_SITE,
             arguments = listOf(
