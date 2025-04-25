@@ -31,46 +31,42 @@ fun ToggleButtonGrid(
         Pair("parking", Icons.Default.LocalParking),
         Pair("laundry", Icons.Default.LocalLaundryService),
         Pair("rest_stop", Icons.Default.Place),
-        Pair("camping", Icons.Default.Terrain)
     )
 
     val campArray = listOf("campground","rv_park","park")
 
     Column(
         modifier = Modifier
-            .fillMaxWidth().padding(10.dp,10.dp,30.dp,10.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .fillMaxWidth()
+            .padding(end=16.dp, top=55.dp) // Añade padding solo a la izquierda
     ) {
-        buttons.chunked(4).forEach { rowButtons ->
+        buttons.forEach { (key, icon) ->
             Row(
-                modifier = Modifier.fillMaxWidth().padding(10.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 15.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
             ) {
-                rowButtons.forEach { (key, icon) ->
-                    ToggleButton(
-                        icon = icon,
-                        isSelected = selectedButtons.contains(key),
-                        onClick = {
-                            // Añadir o eliminar el nombre del botón de la lista
-                            if (selectedButtons.contains(key)) {
-                                if(key == "camping"){
-                                    campArray.forEach() { selectedButtons.remove(it) }
-                                }
-                                selectedButtons.remove(key)
-                            } else {
-                                if(key == "camping") {
-                                    campArray.forEach() { selectedButtons.add(it) }
-                                }
-                                selectedButtons.add(key)
+                ToggleButton(
+                    icon = icon,
+                    isSelected = selectedButtons.contains(key),
+                    onClick = {
+                        if (selectedButtons.contains(key)) {
+                            if(key == "camping") {
+                                campArray.forEach { selectedButtons.remove(it) }
                             }
-                            // Notificar la lista actualizada
-                            onFilterSelected(selectedButtons)
+                            selectedButtons.remove(key)
+                        } else {
+                            if(key == "camping") {
+                                campArray.forEach { selectedButtons.add(it) }
+                            }
+                            selectedButtons.add(key)
                         }
-                    )
-                }
+                        onFilterSelected(selectedButtons)
+                    },
+                )
             }
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -79,14 +75,15 @@ fun ToggleButtonGrid(
 fun ToggleButton(
     icon: ImageVector,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val backgroundColor = if (isSelected) Color.Green else Color.Gray
+    val backgroundColor = if (isSelected) Color.Cyan else Color.LightGray
     val contentColor = if (isSelected) Color.White else Color.Black
 
     IconButton(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .size(36.dp)
             .background(backgroundColor, shape = CircleShape)
     ) {
