@@ -186,19 +186,19 @@ fun NavigatorHub(
             )
         }
         composable(Routes.HOME) { HomeScreen(navigator = navigator) }
-        // ---------- Pendiente de hacer la serialización ----------
         composable(
             route = Routes.CAMPER_SITE,
             arguments = listOf(
-                navArgument("camperSite") { type = NavType.StringType }
+                navArgument("camperSiteID") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            // Comentados para que no den error al commit
-            //val camperSite = backStackEntry.arguments?.getObject("camperSite")
+            val camperSiteID = backStackEntry.arguments?.getString("camperSiteID") ?: ""
 
-            //CamperSiteScreen(site = camperSite, onBackClick = , onBookClick = )
+            CamperSiteScreen(
+                camperSiteID = camperSiteID,
+                onBackClick = { /* Lógica para volver atrás */ },
+                onBookClick = { /* Lógica para reservar */ })
         }
-        // ----------
         composable(
             route = Routes.ADD_CAMPER_SITE,
             arguments = listOf(

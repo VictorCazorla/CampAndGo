@@ -194,18 +194,9 @@ fun MapScreen(
                     )
                 }
 
-                // ---------- Prueba info camper site ----------
-                // Pendiente de serializar el objeto.
-                val db = Firebase.firestore
-                val camperSite = db.collection("camper_sites")
-                    .document("ZFV9wQfSEuhAQUKfHIqD")
-                    .get()
-                    .addOnSuccessListener {
-                        Log.d("Firestore", "Documento extraído")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.d("Firestore", "Error extrayendo el documento", e)
-                    }
+                // Marcador de sitio camper harcode
+                // Pendiente de definir la obtención del ID
+                val camperSiteID = "ZFV9wQfSEuhAQUKfHIqD"
                 val pintoLocation = LatLng(40.2415, -3.7004)
                 Marker(
                     state = MarkerState(position = pintoLocation),
@@ -213,12 +204,11 @@ fun MapScreen(
                     snippet = "Lat: 40.2415, Lng: -3.7004",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE),
                     onClick = {
-                        val route = "camper_site/$camperSite"
+                        val route = "camper_site/$camperSiteID"
                         navigator.navigate(route)
                         true
                     }
                 )
-                // ----------
 
                 // Mostrar lugares cercanos si showNearbyPlaces es true
                 if (showNearbyPlaces) {
@@ -355,9 +345,6 @@ fun MapScreen(
             }
         }
     }
-
-    // Este es el bypass para ver los sitios camper creados.
-    //LaunchCampsite()
 }
 
 /**
@@ -380,7 +367,7 @@ private fun getApiKeyFromManifest(context: Context): String? {
 /**
  * Función pendiente de correcta implementación.
  */
-@RequiresApi(Build.VERSION_CODES.O)
+/*@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun LaunchCampsite() {
 
@@ -442,4 +429,4 @@ private fun LaunchCampsite() {
         onBackClick = { /* Lógica para volver atrás */ },
         onBookClick = { /* Lógica para reservar */ }
     )
-}
+}*/

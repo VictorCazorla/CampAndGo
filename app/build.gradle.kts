@@ -84,8 +84,6 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("io.coil-kt:coil-compose:2.6.0")
 
-    //implementation(libs.firebase.firestore.ktx)
-
     // AndroidX y Jetpack Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -102,8 +100,6 @@ dependencies {
     // Compose
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
-
-
 
     // Lifecycle
     implementation(libs.androidx.lifecycle.runtime.ktx)

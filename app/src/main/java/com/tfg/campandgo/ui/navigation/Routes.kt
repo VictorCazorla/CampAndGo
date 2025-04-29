@@ -5,6 +5,6 @@ object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val HOME = "home"
-    const val CAMPER_SITE = "camper_site/{camperSite}"
+    const val CAMPER_SITE = "camper_site/{camperSiteID}"
     const val ADD_CAMPER_SITE = "add_camper_site/{latitude}/{longitude}"
 }
