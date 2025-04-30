@@ -17,7 +17,6 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.Locale
 
-
 /**
  * ViewModel para gestionar la lógica relacionada con el mapa y las ubicaciones.
  *
@@ -222,7 +221,7 @@ class MapsViewModel : ViewModel() {
     }
 
     /**
-     * Limpia todos los lugares cercanos
+     * Limpia todos los lugares cercanos.
      */
     fun cleanNearbyPlaces() {
         viewModelScope.launch {

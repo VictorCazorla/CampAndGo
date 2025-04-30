@@ -22,12 +22,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.google.maps.android.compose.*
-import com.tfg.campandgo.data.model.CamperSite
-import com.tfg.campandgo.data.model.CamperSiteReview
 import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.Prediction
 import com.tfg.campandgo.ui.component.NearbyPlaceItem
@@ -35,9 +30,6 @@ import com.tfg.campandgo.ui.component.PlaceDetailsSection
 import com.tfg.campandgo.ui.component.SearchBarWithSuggestions
 import com.tfg.campandgo.ui.component.ToggleButtonGrid
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
-import kotlinx.coroutines.tasks.await
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 /**
  * Pantalla que muestra un mapa interactivo con funcionalidades de búsqueda y visualización de lugares cercanos.
@@ -197,6 +189,7 @@ fun MapScreen(
                 // Marcador de sitio camper harcode
                 // Pendiente de definir la obtención del ID
                 val camperSiteID = "ZFV9wQfSEuhAQUKfHIqD"
+                //val camperSiteID = "141bfde1-f9c6-4402-9f59-4aff792dd407"
                 val pintoLocation = LatLng(40.2415, -3.7004)
                 Marker(
                     state = MarkerState(position = pintoLocation),
@@ -363,70 +356,3 @@ private fun getApiKeyFromManifest(context: Context): String? {
         null
     }
 }
-
-/**
- * Función pendiente de correcta implementación.
- */
-/*@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun LaunchCampsite() {
-
-    var sampleCamperSite by remember { mutableStateOf(
-        CamperSite(
-            "", "", "", "", "", listOf(""), 0.0, 0, listOf(""), listOf(CamperSiteReview("", 0.0, "", "", listOf())))
-    ) }
-    val db = Firebase.firestore
-
-    // Usar un LaunchedEffect para realizar la consulta solo una vez
-    LaunchedEffect(Unit) {
-        try {
-            val camperSitesSnapshot = db.collection("camper_sites")
-                .whereEqualTo("id", "long_lat")
-                .get()
-                .await()  // Espera respuesta de manera síncrona
-
-            if (camperSitesSnapshot.isEmpty) {
-                Log.d("LaunchCampsite", "No camper site found")
-            } else {
-                val camperSite = camperSitesSnapshot.documents.first()
-                sampleCamperSite = CamperSite(
-                    id = camperSite.getString("id") ?: "",
-                    name = camperSite.getString("name") ?: "",
-                    formattedAddress = camperSite.getString("formatted_address") ?: "",
-                    description = camperSite.getString("description") ?: "",
-                    mainImageUrl = camperSite.getString("main_image_url") ?: "",
-                    images = camperSite.get("images") as? List<String> ?: listOf(),
-                    rating = camperSite.getDouble("rating") ?: 0.0,
-                    reviewCount = camperSite.getLong("review_count")?.toInt() ?: 0,
-                    amenities = camperSite.get("amenities") as? List<String> ?: listOf(),
-                    reviews = (camperSite.get("reviews") as? List<DocumentReference>)?.map {
-                        val reviewDoc = it.get().await()
-
-                        val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
-                        CamperSiteReview(
-                            userName = reviewDoc.getString("user_name") ?: "",
-                            rating = reviewDoc.getDouble("rating") ?: 0.0,
-                            comment = reviewDoc.getString("comment") ?: "",
-                            date = reviewDoc.getDate("date")?.let { date ->
-                                date.toInstant()
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDate()
-                                    .format(formatter)
-                            } ?: "",
-                            images = reviewDoc.get("images") as? List<String> ?: listOf()
-                        )
-                    } ?: listOf()
-                )
-            }
-
-        } catch (e: Exception) {
-            Log.d("LaunchCampsite", "Error fetching camper site", e)
-        }
-    }
-
-    CamperSiteScreen(
-        site = sampleCamperSite,
-        onBackClick = { /* Lógica para volver atrás */ },
-        onBookClick = { /* Lógica para reservar */ }
-    )
-}*/
