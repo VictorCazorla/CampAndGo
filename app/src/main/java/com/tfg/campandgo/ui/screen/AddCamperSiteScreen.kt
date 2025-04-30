@@ -71,7 +71,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.IconButton
-import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.ktx.firestore
@@ -80,6 +79,8 @@ import com.tfg.campandgo.data.model.CamperSite
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.DropdownMenuItem
 import androidx.navigation.NavController
+import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.firestore.GeoPoint
 import java.util.Locale
 import java.util.UUID
 
@@ -212,7 +213,8 @@ fun AddCamperSiteScreen(
                             rating = rating,
                             reviewCount = 0,
                             amenities = amenities,
-                            reviews = emptyList()
+                            reviews = emptyList(),
+                            location = GeoPoint(latitude, longitude)
                         )
                         saveCamperSiteToFirestore(newCamperSite)
                         navigator.popBackStack() // Vuelve atrás después de guardar

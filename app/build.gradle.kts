@@ -56,6 +56,8 @@ android {
 
 dependencies {
 
+
+
     // Iconos
     implementation("androidx.compose.material:material-icons-extended:1.5.0")
 
@@ -79,6 +81,8 @@ dependencies {
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
     implementation("com.google.android.gms:play-services-base:18.3.0")
+    implementation("com.google.android.gms:play-services-basement:18.3.0")
+
 
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-analytics")

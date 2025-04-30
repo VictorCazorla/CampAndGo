@@ -12,7 +12,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException
+import com.google.android.gms.common.GooglePlayServicesRepairableException
+import com.google.android.gms.security.ProviderInstaller
 import com.tfg.campandgo.CustomButton
+
 
 /**
  * Una función composable que representa la pantalla de inicio.
@@ -95,5 +99,3 @@ fun StartScreen(
         }
     }
 }
-
-

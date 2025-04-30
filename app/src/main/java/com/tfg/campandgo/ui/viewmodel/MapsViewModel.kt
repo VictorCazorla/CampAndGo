@@ -9,14 +9,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.firestore.FirebaseFirestore
 import com.tfg.campandgo.data.api.RetrofitClient
+import com.tfg.campandgo.data.model.CamperSite
 import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.PlaceDetails
 import com.tfg.campandgo.data.model.Prediction
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.Locale
-
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * ViewModel para gestionar la lógica relacionada con el mapa y las ubicaciones.
@@ -35,6 +41,8 @@ class MapsViewModel : ViewModel() {
     var selectedLocation = mutableStateOf<LatLng?>(null)
     var placeDetails = mutableStateOf<PlaceDetails?>(null)
     var nearbyPlaces = mutableStateListOf<Place>()
+    var firebaseCamperSites = mutableStateListOf<CamperSite>()
+    private val firestore = FirebaseFirestore.getInstance()
 
     /**
      * Busca ubicaciones utilizando la API de autocompletado de Google Places.
@@ -222,11 +230,103 @@ class MapsViewModel : ViewModel() {
     }
 
     /**
-     * Limpia todos los lugares cercanos
+     * Limpia todos los lugares cercanos.
      */
     fun cleanNearbyPlaces() {
         viewModelScope.launch {
             nearbyPlaces.clear()
+        }
+    }
+
+    fun fetchCamperSitesFromFirestore(
+        center: LatLng,
+        radius: Double,
+        context: Context,
+        onSuccess: (() -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                firestore.collection("camper_sites")
+                    .get()
+                    .addOnSuccessListener { result ->
+                        val sites = result.documents.mapNotNull { doc ->
+                            val geoPoint = doc.getGeoPoint("location") ?: return@mapNotNull null
+                            val siteLocation = LatLng(geoPoint.latitude, geoPoint.longitude)
+
+                            // Calcular distancia
+                            val distance = calculateHaversineDistance(
+                                center.latitude,
+                                center.longitude,
+                                siteLocation.latitude,
+                                siteLocation.longitude
+                            )
+
+                            if (distance <= radius) {
+                                CamperSite(
+                                    id = doc.id,
+                                    name = doc.getString("name") ?: "",
+                                    formattedAddress = doc.getString("formattedAddress") ?: "",
+                                    description = doc.getString("description") ?: "",
+                                    mainImageUrl = doc.getString("mainImageUrl") ?: "",
+                                    images = doc.get("images") as? List<String> ?: emptyList(),
+                                    rating = doc.getDouble("rating") ?: 0.0,
+                                    reviewCount = doc.getLong("reviewCount")?.toInt() ?: 0,
+                                    amenities = doc.get("amenities") as? List<String> ?: emptyList(),
+                                    reviews = emptyList(),
+                                    location = geoPoint
+                                )
+                            } else {
+                                null
+                            }
+                        }
+
+                        firebaseCamperSites.clear()
+                        firebaseCamperSites.addAll(sites)
+                        onSuccess?.invoke()
+                    }
+                    .addOnFailureListener { exception ->
+                        Toast.makeText(
+                            context,
+                            "Error cargando sitios: ${exception.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    context,
+                    "Error: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    /**
+     * Calcula la distancia entre dos puntos geográficos usando la fórmula Haversine.
+     *
+     * @param lat1 Latitud del primer punto.
+     * @param lon1 Longitud del primer punto.
+     * @param lat2 Latitud del segundo punto.
+     * @param lon2 Longitud del segundo punto.
+     * @return Distancia en kilómetros.
+     */
+    private fun calculateHaversineDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val earthRadius = 6371 // Radio de la Tierra en km
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = sin(dLat / 2).pow(2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLon / 2).pow(2)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        return earthRadius * c
+    }
+
+    /**
+     * Limpia los sitios camper cargados desde Firebase.
+     */
+    fun clearFirebaseCamperSites() {
+        viewModelScope.launch {
+            firebaseCamperSites.clear()
         }
     }
 }

@@ -36,12 +36,4 @@ object RetrofitClient {
     val placesService: GooglePlacesService by lazy {
         getRetrofitInstance().create(GooglePlacesService::class.java)
     }
-
-    /**
-     * Servicio de la API de Geocodificación.
-     * Se inicializa de forma perezosa usando la instancia única de Retrofit.
-     */
-    val geocodeService: GeocodeService by lazy {
-        getRetrofitInstance().create(GeocodeService::class.java)
-    }
 }

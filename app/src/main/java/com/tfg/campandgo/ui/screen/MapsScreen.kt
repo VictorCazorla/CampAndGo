@@ -3,6 +3,8 @@ package com.tfg.campandgo.ui.screen
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -20,14 +22,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.google.maps.android.compose.*
+import com.tfg.campandgo.R
 import com.tfg.campandgo.data.model.CamperSite
-import com.tfg.campandgo.data.model.CamperSiteReview
 import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.Prediction
 import com.tfg.campandgo.ui.component.NearbyPlaceItem
@@ -35,9 +33,6 @@ import com.tfg.campandgo.ui.component.PlaceDetailsSection
 import com.tfg.campandgo.ui.component.SearchBarWithSuggestions
 import com.tfg.campandgo.ui.component.ToggleButtonGrid
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
-import kotlinx.coroutines.tasks.await
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 /**
  * Pantalla que muestra un mapa interactivo con funcionalidades de búsqueda y visualización de lugares cercanos.
@@ -77,6 +72,10 @@ fun MapScreen(
     var showNearbyPlaces by remember { mutableStateOf(false) }
     var selectedPlaceId by remember { mutableStateOf<String?>(null) }
     var termFilterList by remember { mutableStateOf(mutableListOf<String>()) }
+    var showFirebasePlaces by remember { mutableStateOf(false) }
+    val firebaseCamperSites = viewModel.firebaseCamperSites
+
+
 
     // Mover la cámara a la ubicación actual al inicio
     LaunchedEffect(currentLocation) {
@@ -197,12 +196,13 @@ fun MapScreen(
                 // Marcador de sitio camper harcode
                 // Pendiente de definir la obtención del ID
                 val camperSiteID = "ZFV9wQfSEuhAQUKfHIqD"
+                //val camperSiteID = "141bfde1-f9c6-4402-9f59-4aff792dd407"
                 val pintoLocation = LatLng(40.2415, -3.7004)
                 Marker(
                     state = MarkerState(position = pintoLocation),
                     title = "Pinto Camper Spot",
                     snippet = "Lat: 40.2415, Lng: -3.7004",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE),
+                    icon = BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.resources, R.drawable.camp_marker), 120, 120, false)),
                     onClick = {
                         val route = "camper_site/$camperSiteID"
                         navigator.navigate(route)
@@ -227,7 +227,7 @@ fun MapScreen(
                                 title = place.name,
                                 snippet = place.vicinity,
                                 icon = if (hasMatchingType) {
-                                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA)
+                                    BitmapDescriptorFactory.fromResource(R.drawable.camp_marker)
                                 } else if (place.placeId == selectedPlaceId) {
                                     BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
                                 } else {
@@ -245,6 +245,30 @@ fun MapScreen(
                                 }
                             )
                         }
+                    }
+                }
+
+                // Mostrar sitios camper de Firebase
+                if (showFirebasePlaces) {
+                    firebaseCamperSites.forEach { site ->
+                        Marker(
+                            state = MarkerState(position = LatLng(site.location.latitude, site.location.longitude)),
+                            title = site.name,
+                            snippet = "Rating: ${site.rating} (${site.reviewCount} reviews)",
+                            icon = BitmapDescriptorFactory.fromBitmap(
+                                Bitmap.createScaledBitmap(
+                                    BitmapFactory.decodeResource(context.resources, R.drawable.camp_marker),
+                                    120,
+                                    120,
+                                    false
+                                )
+                            ),
+                            onClick = {
+                                val route = "camper_site/${site.id}"
+                                navigator.navigate(route)
+                                true
+                            }
+                        )
                     }
                 }
             }
@@ -281,8 +305,6 @@ fun MapScreen(
                         if (!showNearbyPlaces) {
                             viewModel.placeDetails.value = null
                         }
-                    } else {
-                        Toast.makeText(context, "Selecciona al menos un filtro primero", Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier
@@ -291,6 +313,34 @@ fun MapScreen(
                 enabled = termFilterList.isNotEmpty()
             ) {
                 Text(if (showNearbyPlaces) "Ocultar lugares cercanos" else "Mostrar lugares cercanos")
+            }
+
+            Button(
+                onClick = {
+                    showFirebasePlaces = !showFirebasePlaces
+                    if (showFirebasePlaces) {
+                        val center = viewModel.selectedLocation.value ?: currentLocation ?: return@Button
+                        viewModel.fetchCamperSitesFromFirestore(
+                            center = center,
+                            radius = 10.0,
+                            context = context,
+                            onSuccess = {
+                                Toast.makeText(
+                                    context,
+                                    "${viewModel.firebaseCamperSites.size} sitios cargados",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        )
+                    } else {
+                        viewModel.clearFirebaseCamperSites()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+            ) {
+                Text(if (showFirebasePlaces) "Ocultar sitios camper" else "Mostrar sitios camper")
             }
 
             // Barra de búsqueda y sugerencias
@@ -363,70 +413,3 @@ private fun getApiKeyFromManifest(context: Context): String? {
         null
     }
 }
-
-/**
- * Función pendiente de correcta implementación.
- */
-/*@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-private fun LaunchCampsite() {
-
-    var sampleCamperSite by remember { mutableStateOf(
-        CamperSite(
-            "", "", "", "", "", listOf(""), 0.0, 0, listOf(""), listOf(CamperSiteReview("", 0.0, "", "", listOf())))
-    ) }
-    val db = Firebase.firestore
-
-    // Usar un LaunchedEffect para realizar la consulta solo una vez
-    LaunchedEffect(Unit) {
-        try {
-            val camperSitesSnapshot = db.collection("camper_sites")
-                .whereEqualTo("id", "long_lat")
-                .get()
-                .await()  // Espera respuesta de manera síncrona
-
-            if (camperSitesSnapshot.isEmpty) {
-                Log.d("LaunchCampsite", "No camper site found")
-            } else {
-                val camperSite = camperSitesSnapshot.documents.first()
-                sampleCamperSite = CamperSite(
-                    id = camperSite.getString("id") ?: "",
-                    name = camperSite.getString("name") ?: "",
-                    formattedAddress = camperSite.getString("formatted_address") ?: "",
-                    description = camperSite.getString("description") ?: "",
-                    mainImageUrl = camperSite.getString("main_image_url") ?: "",
-                    images = camperSite.get("images") as? List<String> ?: listOf(),
-                    rating = camperSite.getDouble("rating") ?: 0.0,
-                    reviewCount = camperSite.getLong("review_count")?.toInt() ?: 0,
-                    amenities = camperSite.get("amenities") as? List<String> ?: listOf(),
-                    reviews = (camperSite.get("reviews") as? List<DocumentReference>)?.map {
-                        val reviewDoc = it.get().await()
-
-                        val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
-                        CamperSiteReview(
-                            userName = reviewDoc.getString("user_name") ?: "",
-                            rating = reviewDoc.getDouble("rating") ?: 0.0,
-                            comment = reviewDoc.getString("comment") ?: "",
-                            date = reviewDoc.getDate("date")?.let { date ->
-                                date.toInstant()
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDate()
-                                    .format(formatter)
-                            } ?: "",
-                            images = reviewDoc.get("images") as? List<String> ?: listOf()
-                        )
-                    } ?: listOf()
-                )
-            }
-
-        } catch (e: Exception) {
-            Log.d("LaunchCampsite", "Error fetching camper site", e)
-        }
-    }
-
-    CamperSiteScreen(
-        site = sampleCamperSite,
-        onBackClick = { /* Lógica para volver atrás */ },
-        onBookClick = { /* Lógica para reservar */ }
-    )
-}*/

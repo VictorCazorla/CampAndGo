@@ -1,5 +1,8 @@
 package com.tfg.campandgo.data.model
 
+import com.google.firebase.firestore.GeoPoint
+
+
 data class CamperSite(
     val id: String,
     val name: String,
@@ -10,5 +13,6 @@ data class CamperSite(
     val rating: Double,
     val reviewCount: Int,
     val amenities: List<String>,
-    val reviews: List<CamperSiteReview>
+    val reviews: List<CamperSiteReview>,
+    val location: GeoPoint
 )
