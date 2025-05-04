@@ -25,7 +25,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.tfg.campandgo.R
-import com.tfg.campandgo.data.model.CamperSite
 import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.Prediction
 import com.tfg.campandgo.ui.component.NearbyPlaceItem
@@ -75,8 +74,6 @@ fun MapScreen(
     var showFirebasePlaces by remember { mutableStateOf(false) }
     val firebaseCamperSites = viewModel.firebaseCamperSites
 
-
-
     // Mover la cámara a la ubicación actual al inicio
     LaunchedEffect(currentLocation) {
         currentLocation?.let { location ->
@@ -84,7 +81,6 @@ fun MapScreen(
             if (apiKey != null) viewModel.clearSearchLocations(context)
         }
     }
-
 
     val handleFilterSelected: (List<String>) -> Unit = { filters ->
         termFilterList = filters.toMutableList()
@@ -137,9 +133,7 @@ fun MapScreen(
         }
     }
 
-
     Column(modifier = Modifier.fillMaxSize()) {
-
         Box(modifier = Modifier.fillMaxSize().weight(0.7f), contentAlignment = Alignment.Center) {
 
             val uiSettings = remember {
@@ -188,47 +182,20 @@ fun MapScreen(
                             val longitude = "%.4f".format(location.longitude)
                             val route = "add_camper_site/$latitude/$longitude"
                             navigator.navigate(route)
-                            true // consume el evento
+                            true
                         }
                     )
                 }
-
-                // Marcador de sitio camper harcode
-                // Pendiente de definir la obtención del ID
-                val camperSiteID = "ZFV9wQfSEuhAQUKfHIqD"
-                //val camperSiteID = "141bfde1-f9c6-4402-9f59-4aff792dd407"
-                val pintoLocation = LatLng(40.2415, -3.7004)
-                Marker(
-                    state = MarkerState(position = pintoLocation),
-                    title = "Pinto Camper Spot",
-                    snippet = "Lat: 40.2415, Lng: -3.7004",
-                    icon = BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.resources, R.drawable.camp_marker), 120, 120, false)),
-                    onClick = {
-                        val route = "camper_site/$camperSiteID"
-                        navigator.navigate(route)
-                        true
-                    }
-                )
 
                 // Mostrar lugares cercanos si showNearbyPlaces es true
                 if (showNearbyPlaces) {
                     nearbyPlaces.forEach { place ->
                         place.geometry?.location?.let { location ->
-                            // Verificar si el lugar tiene alguno de los tipos que estamos buscando
-                            val hasMatchingType = place.types?.all { type ->
-                                type.equals("campground", ignoreCase = true) ||
-                                        type.equals("camping", ignoreCase = true) ||
-                                        type.equals("rv_park", ignoreCase = true) ||
-                                        type.equals("park", ignoreCase = true)
-                            } == true
-
                             Marker(
                                 state = MarkerState(position = LatLng(location.lat, location.lng)),
                                 title = place.name,
                                 snippet = place.vicinity,
-                                icon = if (hasMatchingType) {
-                                    BitmapDescriptorFactory.fromResource(R.drawable.camp_marker)
-                                } else if (place.placeId == selectedPlaceId) {
+                                icon = if (place.placeId == selectedPlaceId) {
                                     BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
                                 } else {
                                     BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
@@ -273,9 +240,7 @@ fun MapScreen(
                 }
             }
 
-            Column(modifier = Modifier.fillMaxSize().align(
-                Alignment.TopCenter
-            )) {
+            Column(modifier = Modifier.fillMaxSize().align(Alignment.TopCenter)) {
                 ToggleButtonGrid(onFilterSelected = handleFilterSelected,)
             }
         }
@@ -308,8 +273,8 @@ fun MapScreen(
                     }
                 },
                 modifier = Modifier
-                    .fillMaxWidth().padding(0.dp, 8.dp, 0.dp, 0.dp),
-
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 enabled = termFilterList.isNotEmpty()
             ) {
                 Text(if (showNearbyPlaces) "Ocultar lugares cercanos" else "Mostrar lugares cercanos")
@@ -327,7 +292,7 @@ fun MapScreen(
                             onSuccess = {
                                 Toast.makeText(
                                     context,
-                                    "${viewModel.firebaseCamperSites.size} sitios cargados",
+                                    "${viewModel.firebaseCamperSites.size} sitios disponibles",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
@@ -352,8 +317,7 @@ fun MapScreen(
                     onSearch(prediction.place_id)
                     onSearchQueryChange(prediction.description)
                     viewModel.selectedLocation.value = null // Limpiar la ubicación seleccionada
-                    viewModel.placeDetails.value =
-                        null // Limpiar la información del lugar seleccionado
+                    viewModel.placeDetails.value = null // Limpiar la información del lugar seleccionado
                     showNearbyPlaces = false // Ocultar la lista de lugares cercanos
                     selectedPlaceId = prediction.place_id // Actualizar el lugar seleccionado
                 },
@@ -373,7 +337,6 @@ fun MapScreen(
                                 selectedPlace.geometry.location.lng
                             )
                         }
-
                         // Actualizar la ubicación seleccionada en ViewModel
                         viewModel.selectedLocation.value = latLng
 
@@ -382,8 +345,7 @@ fun MapScreen(
                             ?.let { cameraPositionState.move(it) }
 
                         // Obtener detalles del lugar seleccionado
-                        selectedPlaceId =
-                            selectedPlace.placeId // Actualizar el lugar seleccionado
+                        selectedPlaceId = selectedPlace.placeId // Actualizar el lugar seleccionado
                         val apiKey = getApiKeyFromManifest(context) ?: ""
                         viewModel.getPlaceDetailsFromPlaceId(
                             selectedPlace.placeId,
