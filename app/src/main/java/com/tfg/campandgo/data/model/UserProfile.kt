@@ -1,7 +1,7 @@
 package com.tfg.campandgo.data.model
 
 data class UserProfile(
-    val userId: String = "",
+    var userId: String = "",
     var userName: String = "",
     var userDescription: String = "",
     var profileImageUri: String? = null,

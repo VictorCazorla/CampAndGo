@@ -108,6 +108,7 @@ dependencies {
     // Lifecycle
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.compose.material)
+    implementation(libs.play.services.games)
 
     // Testing
     testImplementation(libs.junit)

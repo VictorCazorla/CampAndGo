@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">campAndGo</string>
     <string name="default_web_client_id">250738336886-c8gk068bcbscd3e89c705elh893f6dpl.apps.googleusercontent.com</string>
+
     <string name="google_maps_key">AIzaSyDoTfuWhvzX90J8qKDowYOXR5FlNTq2chw</string>
+
+    <string name="open_weather_key">614e200d59c5fb765119f2ed8c1a3964</string>
+    <string name="open_weather_unit">metric</string>
+    <string name="open_weather_lang">es</string>
 </resources>

@@ -1,6 +1,5 @@
 package com.tfg.campandgo.ui.screen
 
-import UserProfileScreen
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -41,7 +40,7 @@ fun StartScreen(
         horizontalAlignment = Alignment.CenterHorizontally // Centra los elementos horizontalmente
     ) {
 
-        UserProfileScreen()
+        UserProfileScreen(userProfileId ="pepito@gmail.com")
 
         /**
          * Título de bienvenida.
