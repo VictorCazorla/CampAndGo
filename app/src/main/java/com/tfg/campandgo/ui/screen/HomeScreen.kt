@@ -3,11 +3,14 @@ package com.tfg.campandgo.ui.screen
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
 import com.tfg.campandgo.ui.component.*
 
@@ -38,6 +41,11 @@ fun HomeScreen(navigator: NavController) {
         ErrorScreen(message = "Error: API Key no configurada en el Manifest")
         return
     }
+
+    //TODO
+    val user = Firebase.auth.currentUser
+    val email = user?.email
+    Toast.makeText(context, "Email: $email", Toast.LENGTH_SHORT).show()
 
     // Gestionar permisos de ubicación
     PermissionHandler(viewModel)

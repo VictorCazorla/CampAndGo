@@ -1,5 +1,7 @@
 package com.tfg.campandgo.ui.screen
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -10,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -39,7 +42,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") } // Entrada de la contraseña
     var errorMessage by remember { mutableStateOf<String?>(null) } // Mensaje de error a mostrar
     var isPasswordVisible by remember { mutableStateOf(false) } // Alterna la visibilidad de la contraseña
-    val auth = Firebase.auth // Instancia de autenticación de Firebase
+    val auth = Firebase.auth
 
     Column(
         modifier = Modifier
@@ -103,6 +106,7 @@ fun LoginScreen(
                 } else {
                     auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
+                            //TODO pasar info a preference
                             onLoginClick()
                         } else {
                             when (task.exception) {

@@ -1,6 +1,8 @@
 package com.tfg.campandgo.ui.screen
 
+import UserProfileScreen
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -12,9 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException
-import com.google.android.gms.common.GooglePlayServicesRepairableException
-import com.google.android.gms.security.ProviderInstaller
 import com.tfg.campandgo.CustomButton
 
 
@@ -41,6 +40,8 @@ fun StartScreen(
         verticalArrangement = Arrangement.Center, // Centra los elementos verticalmente
         horizontalAlignment = Alignment.CenterHorizontally // Centra los elementos horizontalmente
     ) {
+
+        UserProfileScreen()
 
         /**
          * Título de bienvenida.

@@ -128,6 +128,7 @@ fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) 
                 } else {
                     auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
+                            //TODO PASAR A PROFILE
                             onRegisterClick()
                         } else {
                             when (task.exception) {
