@@ -48,12 +48,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
-import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.tfg.campandgo.R
+import com.tfg.campandgo.data.api.WeatherRetrofitClient
 import com.tfg.campandgo.data.model.CamperSite
 import com.tfg.campandgo.data.model.CamperSiteReview
 import kotlinx.coroutines.tasks.await
@@ -68,6 +70,14 @@ fun CamperSiteScreen(
     onBookClick: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+
+    // OpenWeather
+    var temp by remember { mutableStateOf<Double?>(0.0) }
+    var tempDescription by remember { mutableStateOf<String?>("") }
+    val context = LocalContext.current
+    val openWeatherKey = context.getString(R.string.open_weather_key)
+    val openWeatherUnit = context.getString(R.string.open_weather_unit)
+    val openWeatherLang = context.getString(R.string.open_weather_lang)
 
     var site by remember { mutableStateOf(
         CamperSite(
@@ -112,14 +122,26 @@ fun CamperSiteScreen(
                         )
                     } ?: listOf(),
                     location = camperSite.getGeoPoint("location")!!
-                    //location = LatLng(camperSite.getGeoPoint("location")!!.latitude, camperSite.getGeoPoint("location")!!.longitude)
                 )
             }
+
+            val response = WeatherRetrofitClient.weatherService.getCurrentWeather(
+                lat = site.location.latitude,
+                lon = site.location.longitude,
+                apiKey = openWeatherKey,
+                units = openWeatherUnit,
+                lang = openWeatherLang
+            )
+            temp = response.main.temp
+            tempDescription = response.weather[0].description
 
         } catch (e: Exception) {
             Log.d("LaunchCampsite", "Error fetching camper site", e)
         }
     }
+
+    // TODO: Definir qué hacer con esto
+    Log.d("LaunchCampsite", "Temperatura: $temp y descripcion: $tempDescription")
 
     Column(
         modifier = Modifier

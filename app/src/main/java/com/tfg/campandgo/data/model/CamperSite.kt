@@ -2,7 +2,6 @@ package com.tfg.campandgo.data.model
 
 import com.google.firebase.firestore.GeoPoint
 
-
 data class CamperSite(
     val id: String,
     val name: String,
