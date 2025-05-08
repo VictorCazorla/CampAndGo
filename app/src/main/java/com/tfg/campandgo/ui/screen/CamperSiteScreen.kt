@@ -72,8 +72,11 @@ fun CamperSiteScreen(
     val scrollState = rememberScrollState()
 
     // OpenWeather
-    var temp by remember { mutableStateOf<Double?>(0.0) }
-    var tempDescription by remember { mutableStateOf<String?>("") }
+    var nameWeather by remember { mutableStateOf<String?>("") }
+    var tempWeather by remember { mutableStateOf<Double?>(0.0) }
+    var humidityWeather by remember { mutableStateOf<Int?>(0) }
+    var descriptionWeather by remember { mutableStateOf<String?>("") }
+    var iconWeather by remember { mutableStateOf<String?>("") }
     val context = LocalContext.current
     val openWeatherKey = context.getString(R.string.open_weather_key)
     val openWeatherUnit = context.getString(R.string.open_weather_unit)
@@ -132,16 +135,16 @@ fun CamperSiteScreen(
                 units = openWeatherUnit,
                 lang = openWeatherLang
             )
-            temp = response.main.temp
-            tempDescription = response.weather[0].description
+            nameWeather = response.name
+            tempWeather = response.main.temp
+            humidityWeather = response.main.humidity
+            descriptionWeather = response.weather[0].description
+            iconWeather = response.weather[0].icon
 
         } catch (e: Exception) {
             Log.d("LaunchCampsite", "Error fetching camper site", e)
         }
     }
-
-    // TODO: Definir qué hacer con esto
-    Log.d("LaunchCampsite", "Temperatura: $temp y descripcion: $tempDescription")
 
     Column(
         modifier = Modifier
@@ -270,6 +273,65 @@ fun CamperSiteScreen(
                             text = "${site.reviewCount} reviews",
                             style = MaterialTheme.typography.headlineSmall,
                             color = Color.White
+                        )
+                    }
+                }
+            }
+
+            // Weather box
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Text(
+                        text = "Weather",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    if (tempWeather != null && descriptionWeather != null && humidityWeather != null && nameWeather != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Temperature
+                            Text(
+                                text = "${"%.1f".format(tempWeather)}°C",
+                                style = MaterialTheme.typography.displaySmall,
+                                color = if (tempWeather!! > 20) Color(0xFFB71C1C) else Color(0xFF2196F3)
+                            )
+
+                            // Location and condition data
+                            Column(
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                Text(
+                                    text = nameWeather!!,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = descriptionWeather!!.replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Humidity: $humidityWeather%",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = "Loading weather data...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
                         )
                     }
                 }
