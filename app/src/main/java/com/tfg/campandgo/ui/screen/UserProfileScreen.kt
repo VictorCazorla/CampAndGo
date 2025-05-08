@@ -27,6 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material.Chip
 import coil.compose.AsyncImage
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -386,6 +387,17 @@ fun UserProfileScreen(userProfileId: String, isEditable: Boolean = true) {
                                 .padding(top = 8.dp)
                                 .fillMaxWidth(0.8f)
                                 .padding(8.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
                         )
                     } else {
                         Text(
@@ -406,90 +418,81 @@ fun UserProfileScreen(userProfileId: String, isEditable: Boolean = true) {
                         modifier = Modifier.padding(top = 4.dp)
                     )
 
-                    // Tags
-                    if (tagList.isNotEmpty() || isEditing) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                            modifier = Modifier.fillMaxWidth()
+                    // Tags - Versión con wrap (FlowRow)
+                    if (isEditing) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
-                            items(if (isEditing) tempTagList else tagList) { tag ->
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(MaterialTheme.colorScheme.tertiaryContainer)
-                                        .border(
-                                            width = 1.dp,
-                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                                            shape = RoundedCornerShape(16.dp)
-                                        )
-                                        .clickable(enabled = isEditing) {
-                                            if (isEditing) {
-                                                tempTagList = tempTagList - tag
-                                            }
-                                        }
-                                        .padding(horizontal = 8.dp, vertical = 6.dp)
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = tag,
-                                            style = MaterialTheme.typography.labelMedium.copy(
-                                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                                fontWeight = FontWeight.Medium
-                                            )
-                                        )
-                                        if (isEditing) {
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Icon(
-                                                imageVector = Icons.Default.Close,
-                                                contentDescription = "Eliminar tag",
-                                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                        }
-                                    }
+                            // Tags existentes con FlowRow que hace wrap
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                tempTagList.forEach { tag ->
+                                    Chip(
+                                        label = tag,
+                                        onDelete = {
+                                            tempTagList = tempTagList - tag
+                                        },
+                                        color = MaterialTheme.colorScheme.primaryContainer
+                                    )
                                 }
                             }
 
-                            if (isEditing) {
-                                item {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .background(MaterialTheme.colorScheme.primaryContainer)
-                                            .padding(horizontal = 8.dp, vertical = 6.dp)
-                                    ) {
-                                        BasicTextField(
-                                            value = newTag,
-                                            onValueChange = { newTag = it },
-                                            textStyle = MaterialTheme.typography.labelMedium.copy(
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                fontWeight = FontWeight.Medium
-                                            ),
-                                            modifier = Modifier
-                                                .width(80.dp)
-                                                .focusRequester(tagFocusRequester),
-                                            singleLine = true
-                                        )
-                                        IconButton(
-                                            onClick = {
-                                                if (newTag.isNotBlank()) {
-                                                    tempTagList = tempTagList + newTag
-                                                    newTag = ""
+                            // Botón para añadir nuevos tags
+                            var expanded by remember { mutableStateOf(false) }
+                            val suggestedTags = listOf("Acampada", "Senderismo", "Montaña", "Playa",
+                                "Aventura", "Familiar", "Mochilero", "Lujo", "Minimalista")
+
+                            Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
+                                IconButton(
+                                    onClick = { expanded = true },
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Añadir etiqueta",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    suggestedTags
+                                        .filter { it !in tempTagList }
+                                        .forEach { tag ->
+                                            DropdownMenuItem(
+                                                text = { Text(tag) },
+                                                onClick = {
+                                                    tempTagList = tempTagList + tag
+                                                    expanded = false
                                                 }
-                                            },
-                                            modifier = Modifier.size(20.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Add,
-                                                contentDescription = "Añadir tag",
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                                             )
                                         }
-                                    }
                                 }
+                            }
+                        }
+                    } else if (tagList.isNotEmpty()) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            tagList.forEach { tag ->
+                                Chip(
+                                    label = tag,
+                                    onDelete = null,
+                                    color = MaterialTheme.colorScheme.surfaceVariant
+                                )
                             }
                         }
                     }
@@ -757,6 +760,48 @@ fun AchievementItem(
                 ),
                 modifier = Modifier.align(Alignment.End)
             )
+        }
+    }
+}
+
+@Composable
+fun Chip(
+    label: String,
+    onDelete: (() -> Unit)?,
+    color: Color
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(color)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f)
+            )
+        )
+
+        if (onDelete != null) {
+            Spacer(modifier = Modifier.width(4.dp))
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Eliminar tag",
+                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                    modifier = Modifier.size(12.dp)
+                )
+            }
         }
     }
 }
