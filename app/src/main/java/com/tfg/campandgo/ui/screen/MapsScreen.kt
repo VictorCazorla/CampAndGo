@@ -23,6 +23,8 @@ import androidx.navigation.NavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.google.maps.android.compose.*
 import com.tfg.campandgo.R
 import com.tfg.campandgo.data.model.Place
@@ -73,6 +75,7 @@ fun MapScreen(
     var termFilterList by remember { mutableStateOf(mutableListOf<String>()) }
     var showFirebasePlaces by remember { mutableStateOf(false) }
     val firebaseCamperSites = viewModel.firebaseCamperSites
+    val user = Firebase.auth.currentUser
 
     // Mover la cámara a la ubicación actual al inicio
     LaunchedEffect(currentLocation) {
@@ -241,6 +244,16 @@ fun MapScreen(
             }
 
             Column(modifier = Modifier.fillMaxSize().align(Alignment.TopCenter)) {
+                Button(
+                    onClick = {
+                        navigator.navigate("user_profile/${user?.email}")
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                ) {
+                    Text( "Profile")
+                }
                 ToggleButtonGrid(onFilterSelected = handleFilterSelected,)
             }
         }

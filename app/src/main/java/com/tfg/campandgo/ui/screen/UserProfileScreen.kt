@@ -1,5 +1,6 @@
 package com.tfg.campandgo.ui.screen
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,6 +28,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import androidx.wear.compose.material.Chip
 import coil.compose.AsyncImage
 import com.google.firebase.firestore.ktx.firestore
@@ -36,42 +38,37 @@ import kotlinx.coroutines.tasks.await
 import kotlin.math.min
 
 @Composable
-fun UserProfileScreen(userProfileId: String, isEditable: Boolean = true) {
+fun UserProfileScreen(email: String, navigator: NavController) {
     val db = Firebase.firestore
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var userName by remember { mutableStateOf("") }
+    var userName by remember { mutableStateOf("Anonymous") }
     var userImage by remember { mutableStateOf("") }
     var bannerImage by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var camperHistory by remember { mutableStateOf("") }
+    var camperHistory by remember { mutableStateOf("Sobre mis viajes") }
     var tagList by remember { mutableStateOf(emptyList<String>()) }
-    var visitedPlaces by remember { mutableStateOf(0) }
-    var reviews by remember { mutableStateOf(0) }
+    var visitedPlaces by remember { mutableIntStateOf(0) }
+    var reviews by remember { mutableIntStateOf(0) }
 
-    // Estado para controlar el modo edición
     var isEditing by remember { mutableStateOf(false) }
-    // Estado temporal para los campos editables
     var tempUserName by remember { mutableStateOf("") }
     var tempUserImage by remember { mutableStateOf("") }
     var tempBannerImage by remember { mutableStateOf("") }
     var tempCamperHistory by remember { mutableStateOf("") }
     var tempTagList by remember { mutableStateOf(emptyList<String>()) }
-    var newTag by remember { mutableStateOf("") }
-    val tagFocusRequester = remember { FocusRequester() }
+    var tempVisitedPlaces by remember { mutableIntStateOf(0) }
+    var tempReviews by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(userProfileId) {
+    LaunchedEffect(email) {
         try {
-            val snapshot = db.collection("users").document(userProfileId).get().await()
+            val snapshot = db.collection("users").document(email).get().await()
             val data = snapshot.data
 
             data?.let {
                 userName = it["user_name"] as? String ?: ""
                 userImage = it["user_image"] as? String ?: ""
                 bannerImage = it["banner_image"] as? String ?: ""
-                email = it["email"] as? String ?: ""
                 camperHistory = it["camper_history"] as? String ?: ""
                 tagList = it["tag_list"] as? List<String> ?: emptyList()
                 visitedPlaces = (it["visited_places"] as? Long)?.toInt() ?: 0
@@ -83,6 +80,8 @@ fun UserProfileScreen(userProfileId: String, isEditable: Boolean = true) {
                 tempBannerImage = bannerImage
                 tempCamperHistory = camperHistory
                 tempTagList = tagList
+                tempVisitedPlaces = visitedPlaces
+                tempReviews = reviews
             }
         } catch (e: Exception) {
             scope.launch {
@@ -100,10 +99,18 @@ fun UserProfileScreen(userProfileId: String, isEditable: Boolean = true) {
                     "user_image" to tempUserImage,
                     "banner_image" to tempBannerImage,
                     "camper_history" to tempCamperHistory,
-                    "tag_list" to tempTagList
+                    "tag_list" to tempTagList,
+                    "visited_places" to tempVisitedPlaces,
+                    "reviews" to tempReviews,
+                    "email" to email
                 )
 
-                db.collection("users").document(userProfileId).update(updates).await()
+                val snapshot = db.collection("users").document(email).get().await()
+                if (!snapshot.exists()) {
+                    db.collection("users").document(email).set(updates).await()
+                } else {
+                    db.collection("users").document(email).update(updates).await()
+                }
 
                 // Actualizar los valores principales
                 userName = tempUserName
@@ -111,6 +118,8 @@ fun UserProfileScreen(userProfileId: String, isEditable: Boolean = true) {
                 bannerImage = tempBannerImage
                 camperHistory = tempCamperHistory
                 tagList = tempTagList
+                visitedPlaces = tempVisitedPlaces
+                reviews = tempReviews
 
                 isEditing = false
                 snackbarHostState.showSnackbar("Perfil actualizado correctamente")
@@ -260,7 +269,16 @@ fun UserProfileScreen(userProfileId: String, isEditable: Boolean = true) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         IconButton(
-                            onClick = { /* Handle back navigation */ },
+                            onClick = {
+                                try {
+                                    if (!navigator.popBackStack()) {
+                                        navigator.navigateUp()
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("Navigation", "Error al navegar hacia atrás", e)
+                                    navigator.navigateUp()
+                                }
+                            },
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
@@ -272,60 +290,57 @@ fun UserProfileScreen(userProfileId: String, isEditable: Boolean = true) {
                                 tint = Color.White
                             )
                         }
-
-                        if (isEditable) {
-                            if (isEditing) {
-                                Row {
-                                    IconButton(
-                                        onClick = {
-                                            isEditing = false
-                                            // Restaurar valores originales
-                                            tempUserName = userName
-                                            tempUserImage = userImage
-                                            tempBannerImage = bannerImage
-                                            tempCamperHistory = camperHistory
-                                            tempTagList = tagList
-                                        },
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.Black.copy(alpha = 0.5f))
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = "Cancel",
-                                            tint = Color.White
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    IconButton(
-                                        onClick = { saveChanges() },
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.Black.copy(alpha = 0.5f))
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = "Save",
-                                            tint = Color.White
-                                        )
-                                    }
-                                }
-                            } else {
+                        if (isEditing) {
+                            Row {
                                 IconButton(
-                                    onClick = { isEditing = true },
+                                    onClick = {
+                                        isEditing = false
+                                        // Restaurar valores originales
+                                        tempUserName = userName
+                                        tempUserImage = userImage
+                                        tempBannerImage = bannerImage
+                                        tempCamperHistory = camperHistory
+                                        tempTagList = tagList
+                                    },
                                     modifier = Modifier
                                         .size(40.dp)
                                         .clip(CircleShape)
                                         .background(Color.Black.copy(alpha = 0.5f))
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "Edit",
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Cancel",
                                         tint = Color.White
                                     )
                                 }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                IconButton(
+                                    onClick = { saveChanges() },
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.Black.copy(alpha = 0.5f))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Save",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        } else {
+                            IconButton(
+                                onClick = { isEditing = true },
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Black.copy(alpha = 0.5f))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Edit",
+                                    tint = Color.White
+                                )
                             }
                         }
                     }
@@ -359,6 +374,7 @@ fun UserProfileScreen(userProfileId: String, isEditable: Boolean = true) {
                                 .clip(CircleShape)
                                 .border(4.dp, Color.White, CircleShape)
                                 .clickable(enabled = isEditing) {
+                                    //TODO
                                     // Aquí podrías añadir lógica para cambiar la imagen
                                 }
                         )
@@ -445,7 +461,7 @@ fun UserProfileScreen(userProfileId: String, isEditable: Boolean = true) {
                             // Botón para añadir nuevos tags
                             var expanded by remember { mutableStateOf(false) }
                             val suggestedTags = listOf("Acampada", "Senderismo", "Montaña", "Playa",
-                                "Aventura", "Familiar", "Mochilero", "Lujo", "Minimalista")
+                                "Aventura", "Familia", "Mochilero", "Naturaleza", "Minimalista")
 
                             Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
                                 IconButton(

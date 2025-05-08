@@ -3,6 +3,7 @@ package com.tfg.campandgo.ui.screen
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
@@ -10,9 +11,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
 import com.tfg.campandgo.ui.component.*
+import kotlinx.coroutines.tasks.await
 
 /**
  * Pantalla principal de la aplicación que gestiona la búsqueda de ubicaciones y la visualización del mapa.
@@ -33,19 +36,18 @@ import com.tfg.campandgo.ui.component.*
 fun HomeScreen(navigator: NavController) {
     val viewModel: MapsViewModel = viewModel()
     val context = LocalContext.current
+
     val apiKey = remember { getApiKeyFromManifest(context) }
     var searchQuery by remember { mutableStateOf("") }
+
+    val user = Firebase.auth.currentUser
+    val db = Firebase.firestore
 
     // Si no se encuentra la API Key, mostrar un mensaje de error y salir
     if (apiKey == null) {
         ErrorScreen(message = "Error: API Key no configurada en el Manifest")
         return
     }
-
-    //TODO
-    val user = Firebase.auth.currentUser
-    val email = user?.email
-    Toast.makeText(context, "Email: $email", Toast.LENGTH_SHORT).show()
 
     // Gestionar permisos de ubicación
     PermissionHandler(viewModel)
@@ -60,6 +62,22 @@ fun HomeScreen(navigator: NavController) {
         LaunchedEffect(searchQuery) {
             if (searchQuery.length > 2) {
                 viewModel.searchLocations(searchQuery, apiKey, context)
+            }
+        }
+
+        // Comprobar si el usuario tiene un perfil y si no lo tiene, crearlo
+        LaunchedEffect(user) {
+            if (user != null && user.email != null) {
+                try {
+                    val snapshot = db.collection("users").document(user.email!!).get().await()
+                    if (!snapshot.exists()) {
+                        navigator.navigate("user_profile/${user.email}")
+                    }
+                } catch (e: Exception) {
+                    Log.e("UserProfile", "Error checking user profile", e)
+                }
+            } else {
+                Log.w("UserProfile", "User or email is null")
             }
         }
 

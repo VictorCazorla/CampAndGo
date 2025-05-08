@@ -47,6 +47,7 @@ import com.tfg.campandgo.ui.screen.CamperSiteScreen
 import com.tfg.campandgo.ui.screen.LoginScreen
 import com.tfg.campandgo.ui.screen.RegisterScreen
 import com.tfg.campandgo.ui.screen.StartScreen
+import com.tfg.campandgo.ui.screen.UserProfileScreen
 import com.tfg.campandgo.ui.theme.CampAndGoTheme
 
 /**
@@ -186,6 +187,16 @@ fun NavigatorHub(
             )
         }
         composable(Routes.HOME) { HomeScreen(navigator = navigator) }
+        composable(
+            route = Routes.USER_PROFILE,
+            arguments = listOf(
+                navArgument("email") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+
+            UserProfileScreen(email = email, navigator = navigator)
+        }
         composable(
             route = Routes.CAMPER_SITE,
             arguments = listOf(
