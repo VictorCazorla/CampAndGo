@@ -1,6 +1,11 @@
 package com.tfg.campandgo.ui.screen
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,21 +25,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
-import androidx.wear.compose.material.Chip
 import coil.compose.AsyncImage
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.io.File
+import java.util.UUID
 import kotlin.math.min
 
 @Composable
@@ -42,6 +49,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     val db = Firebase.firestore
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     var userName by remember { mutableStateOf("Anonymous") }
     var userImage by remember { mutableStateOf("") }
@@ -60,6 +68,53 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     var tempVisitedPlaces by remember { mutableIntStateOf(0) }
     var tempReviews by remember { mutableIntStateOf(0) }
 
+    // For image picking
+    val profileImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            scope.launch {
+                val downloadUrl = uploadToFirebase(it, "profile_images", context)
+                downloadUrl?.let { url ->
+                    tempUserImage = url
+                }
+            }
+        }
+    }
+
+    val bannerImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            scope.launch {
+                val downloadUrl = uploadToFirebase(it, "banner_images", context)
+                downloadUrl?.let { url ->
+                    tempBannerImage = url
+                }
+            }
+        }
+    }
+
+    val cameraImageUri = remember { mutableStateOf<Uri?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            tempBannerImage = cameraImageUri.value.toString()
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            tempBannerImage = it.toString()
+        }
+    }
+
+    fun createImageFile(context: Context): Uri {
+        val file = File(context.cacheDir, "temp_image.jpg")
+        return FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+    }
+
+
     LaunchedEffect(email) {
         try {
             val snapshot = db.collection("users").document(email).get().await()
@@ -74,7 +129,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 visitedPlaces = (it["visited_places"] as? Long)?.toInt() ?: 0
                 reviews = (it["reviews"] as? Long)?.toInt() ?: 0
 
-                // Inicializar los valores temporales
+                // Initialize temporary values
                 tempUserName = userName
                 tempUserImage = userImage
                 tempBannerImage = bannerImage
@@ -90,7 +145,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         }
     }
 
-    // Función para guardar los cambios
+    // Function to save changes
     fun saveChanges() {
         scope.launch {
             try {
@@ -112,7 +167,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                     db.collection("users").document(email).update(updates).await()
                 }
 
-                // Actualizar los valores principales
+                // Update main values
                 userName = tempUserName
                 userImage = tempUserImage
                 bannerImage = tempBannerImage
@@ -128,6 +183,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
             }
         }
     }
+
 
     // Sección de Logros
     val achievements = remember(visitedPlaces, reviews) {
@@ -236,13 +292,50 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         ).filter { it.target > 0 }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+
+        // Estado para mostrar el diálogo
+        var showImagePickerDialog by remember { mutableStateOf(false) }
+
+        // Mostrar diálogo de selección (cámara o galería)
+        if (showImagePickerDialog) {
+            AlertDialog(
+                onDismissRequest = { showImagePickerDialog = false },
+                title = { Text("Seleccionar imagen") },
+                text = {
+                    Column {
+                        Text("Tomar foto con cámara", modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val uri = createImageFile(context)
+                                cameraImageUri.value = uri
+                                cameraLauncher.launch(uri)
+                                showImagePickerDialog = false
+                            }
+                            .padding(8.dp))
+                        Text("Elegir desde galería", modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                galleryLauncher.launch("image/*")
+                                showImagePickerDialog = false
+                            }
+                            .padding(8.dp))
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {}
+            )
+        }
+
         LazyColumn(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
-            // Sección superior (banner, info usuario, stats)
+            // Banner section
             item {
-                // Banner Image
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -253,7 +346,11 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                         else bannerImage.ifEmpty { "https://example.com/default_banner.jpg" },
                         contentDescription = "Banner",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(enabled = isEditing) {
+                                showImagePickerDialog = true
+                            }
                     )
 
                     Box(
@@ -269,16 +366,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         IconButton(
-                            onClick = {
-                                try {
-                                    if (!navigator.popBackStack()) {
-                                        navigator.navigateUp()
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("Navigation", "Error al navegar hacia atrás", e)
-                                    navigator.navigateUp()
-                                }
-                            },
+                            onClick = { navigator.popBackStack() },
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
@@ -290,12 +378,13 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                                 tint = Color.White
                             )
                         }
+
                         if (isEditing) {
                             Row {
                                 IconButton(
                                     onClick = {
                                         isEditing = false
-                                        // Restaurar valores originales
+                                        // Restore original values
                                         tempUserName = userName
                                         tempUserImage = userImage
                                         tempBannerImage = bannerImage
@@ -344,47 +433,57 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                             }
                         }
                     }
+                }
+            }
 
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .size(110.dp)
-                            .offset(y = 55.dp)
-                            .shadow(
-                                elevation = 12.dp,
-                                shape = CircleShape,
-                                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-                            )
+            // Profile picture and name section
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 55.dp) // To overlap with banner
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                        )
+                                .size(110.dp)
+                                .shadow(
+                                    elevation = 12.dp,
+                                    shape = CircleShape,
+                                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                                )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                            )
 
-                        // Foto de perfil
-                        AsyncImage(
-                            model = if (isEditing) tempUserImage.ifEmpty { "https://example.com/default_profile.jpg" }
-                            else userImage.ifEmpty { "https://example.com/default_profile.jpg" },
-                            contentDescription = "Profile picture",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape)
-                                .border(4.dp, Color.White, CircleShape)
-                                .clickable(enabled = isEditing) {
-                                    //TODO
-                                    // Aquí podrías añadir lógica para cambiar la imagen
-                                }
-                        )
+                            // Profile picture
+                            AsyncImage(
+                                model = if (isEditing) tempUserImage.ifEmpty { "https://example.com/default_profile.jpg" }
+                                else userImage.ifEmpty { "https://example.com/default_profile.jpg" },
+                                contentDescription = "Profile picture",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                                    .border(4.dp, Color.White, CircleShape)
+                                    .clickable(enabled = isEditing) {
+                                        showImagePickerDialog = true
+                                    }
+                            )
+                        }
                     }
                 }
+            }
 
-                // Espacio para compensar la superposición
-                Spacer(modifier = Modifier.height(50.dp))
-
-                // Sección de nombre y email
+            // Name and email section
+            item {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -407,12 +506,10 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                                 .border(
                                     width = 1.dp,
                                     color = MaterialTheme.colorScheme.primary,
-                                    shape = RoundedCornerShape(8.dp)
-                                )
+                                    shape = RoundedCornerShape(8.dp))
                                 .background(
                                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
+                                    shape = RoundedCornerShape(8.dp))
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
                         )
                     } else {
@@ -433,142 +530,150 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                         ),
                         modifier = Modifier.padding(top = 4.dp)
                     )
+                }
+            }
 
-                    // Tags - Versión con wrap (FlowRow)
-                    if (isEditing) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            // Tags existentes con FlowRow que hace wrap
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            ) {
-                                tempTagList.forEach { tag ->
-                                    Chip(
-                                        label = tag,
-                                        onDelete = {
-                                            tempTagList = tempTagList - tag
-                                        },
-                                        color = MaterialTheme.colorScheme.primaryContainer
-                                    )
-                                }
-                            }
 
-                            // Botón para añadir nuevos tags
-                            var expanded by remember { mutableStateOf(false) }
-                            val suggestedTags = listOf("Acampada", "Senderismo", "Montaña", "Playa",
-                                "Aventura", "Familia", "Mochilero", "Naturaleza", "Minimalista")
-
-                            Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-                                IconButton(
-                                    onClick = { expanded = true },
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primaryContainer)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = "Añadir etiqueta",
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-
-                                DropdownMenu(
-                                    expanded = expanded,
-                                    onDismissRequest = { expanded = false }
-                                ) {
-                                    suggestedTags
-                                        .filter { it !in tempTagList }
-                                        .forEach { tag ->
-                                            DropdownMenuItem(
-                                                text = { Text(tag) },
-                                                onClick = {
-                                                    tempTagList = tempTagList + tag
-                                                    expanded = false
-                                                }
-                                            )
-                                        }
-                                }
-                            }
-                        }
-                    } else if (tagList.isNotEmpty()) {
+            // Tags section
+            item {
+                if (isEditing) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        // Existing tags
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(bottom = 8.dp)
                         ) {
-                            tagList.forEach { tag ->
+                            tempTagList.forEach { tag ->
                                 Chip(
                                     label = tag,
-                                    onDelete = null,
-                                    color = MaterialTheme.colorScheme.surfaceVariant
+                                    onDelete = {
+                                        tempTagList = tempTagList - tag
+                                    },
+                                    color = MaterialTheme.colorScheme.primaryContainer
                                 )
                             }
                         }
-                    }
 
-                    // Sección Camper Story
-                    if (camperHistory.isNotEmpty() || isEditing) {
-                        Spacer(modifier = Modifier.height(24.dp))
+                        // Button to add new tags
+                        var expanded by remember { mutableStateOf(false) }
+                        val suggestedTags = listOf("Acampada", "Senderismo", "Montaña", "Playa",
+                            "Aventura", "Familia", "Mochilero", "Naturaleza", "Minimalista")
 
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp)
-                        ) {
-                            Text(
-                                text = "Sobre mi",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                ),
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-
-                            if (isEditing) {
-                                BasicTextField(
-                                    value = tempCamperHistory,
-                                    onValueChange = { tempCamperHistory = it },
-                                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-                                    ),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                                        .padding(8.dp)
-                                        .height(100.dp)
-                                )
-                            } else {
-                                Text(
-                                    text = camperHistory,
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
-                                    ),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                                        .padding(8.dp)
+                        Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
+                            IconButton(
+                                onClick = { expanded = true },
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Añadir etiqueta",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
+
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                suggestedTags
+                                    .filter { it !in tempTagList }
+                                    .forEach { tag ->
+                                        DropdownMenuItem(
+                                            text = { Text(tag) },
+                                            onClick = {
+                                                tempTagList = tempTagList + tag
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                            }
+                        }
+                    }
+                } else if (tagList.isNotEmpty()) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        tagList.forEach { tag ->
+                            Chip(
+                                label = tag,
+                                onDelete = null,
+                                color = MaterialTheme.colorScheme.surfaceVariant
+                            )
                         }
                     }
                 }
+            }
 
-                // Estadísticas
+
+            // Camper Story section
+            item {
+                if (camperHistory.isNotEmpty() || isEditing) {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                    ) {
+                        Text(
+                            text = "Sobre mi",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            ),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        if (isEditing) {
+                            BasicTextField(
+                                value = tempCamperHistory,
+                                onValueChange = { tempCamperHistory = it },
+                                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                    .padding(8.dp)
+                                    .height(100.dp)
+                            )
+                        } else {
+                            Text(
+                                text = camperHistory,
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                    .padding(8.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Statistics
+            item {
                 Row(
                     modifier = Modifier
                         .padding(horizontal = 12.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
                 ) {
-                    // Cuadrado para Lugares visitados
+                    // Visited places box
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -605,7 +710,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                         }
                     }
 
-                    // Cuadrado para Reseñas
+                    // Reviews box
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -644,7 +749,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 }
             }
 
-            // Título de logros
+            // Achievements title
             item {
                 Text(
                     text = "Mis Logros (${achievements.count { it.current >= it.target }}/${achievements.size})",
@@ -658,7 +763,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 )
             }
 
-            // Items de logros
+            // Achievements items
             items(achievements) { achievement ->
                 AchievementItem(
                     icon = achievement.icon,
@@ -672,13 +777,11 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
-
-        // Snackbar para mostrar mensajes
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
     }
+    // Snackbar para mostrar mensajes
+    SnackbarHost(
+        hostState = snackbarHostState
+    )
 }
 
 data class AchievementData(
@@ -821,3 +924,18 @@ fun Chip(
         }
     }
 }
+
+suspend fun uploadToFirebase(uri: Uri, folder: String, context: Context): String? {
+    val storageRef = FirebaseStorage.getInstance().reference
+    val imageRef = storageRef.child("$folder/${UUID.randomUUID()}.jpg")
+
+    return try {
+        imageRef.putFile(uri).await()
+        imageRef.downloadUrl.await().toString()
+    } catch (e: Exception) {
+        Toast.makeText(context, "Error al subir imagen", Toast.LENGTH_SHORT).show()
+        null
+    }
+}
+
+

@@ -87,6 +87,7 @@ dependencies {
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-analytics")
     implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("com.google.firebase:firebase-storage")
 
     // AndroidX y Jetpack Compose
     implementation(libs.androidx.core.ktx)

@@ -1,7 +1,10 @@
 package com.tfg.campandgo.ui.screen
 
+import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -42,15 +45,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Slider
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -58,9 +70,11 @@ import com.tfg.campandgo.R
 import com.tfg.campandgo.data.api.WeatherRetrofitClient
 import com.tfg.campandgo.data.model.CamperSite
 import com.tfg.campandgo.data.model.CamperSiteReview
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -70,6 +84,8 @@ fun CamperSiteScreen(
     onBookClick: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
+    val db = Firebase.firestore
 
     // OpenWeather
     var nameWeather by remember { mutableStateOf<String?>("") }
@@ -77,17 +93,27 @@ fun CamperSiteScreen(
     var humidityWeather by remember { mutableStateOf<Int?>(0) }
     var descriptionWeather by remember { mutableStateOf<String?>("") }
     var iconWeather by remember { mutableStateOf<String?>("") }
-    val context = LocalContext.current
     val openWeatherKey = context.getString(R.string.open_weather_key)
     val openWeatherUnit = context.getString(R.string.open_weather_unit)
     val openWeatherLang = context.getString(R.string.open_weather_lang)
 
+    // Reviews
+    //val storage = Firebase.storage
+    val scope = rememberCoroutineScope()
+    var newComment by remember { mutableStateOf("") }
+    var newRating by remember { mutableDoubleStateOf(0.0) }
+    var images by remember { mutableStateOf(listOf<Uri>()) }
+    var showNewReviewForm by remember { mutableStateOf(false) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        images = images + uris
+    }
+
+    // CamperSite
     var site by remember { mutableStateOf(
         CamperSite(
             "", "", "", "", "", listOf(""), 0.0, 0, listOf(""), listOf(CamperSiteReview("", 0.0, "", "", listOf())), GeoPoint(0.0,0.0)
         )
     ) }
-    val db = Firebase.firestore
 
     LaunchedEffect(Unit) {
         try {
@@ -438,14 +464,159 @@ fun CamperSiteScreen(
                     .background(Color.White, RoundedCornerShape(8.dp))
                     .padding(16.dp)
             ) {
-                Column {
-                    Text(
-                        text = "Reviews",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                var showAllReviews by remember { mutableStateOf(false) }
 
-                    site.reviews.take(3).forEach { review ->
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Reviews",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        IconButton(onClick = { showNewReviewForm = !showNewReviewForm }) {
+                            Icon(
+                                imageVector = if (showNewReviewForm) Icons.Default.Close else Icons.Default.Add,
+                                contentDescription = if (showNewReviewForm) "Close Form" else "Add Review"
+                            )
+                        }
+                    }
+
+                    // New review input area
+                    if (showNewReviewForm) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                                .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
+                                .padding(12.dp)
+                        ) {
+                            // Comment input
+                            TextField(
+                                value = newComment,
+                                onValueChange = { newComment = it },
+                                label = { Text("Comment") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            // Image picker
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(onClick = { launcher.launch("image/*") }) {
+                                Text("Add Images")
+                            }
+
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(images) { uri ->
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(4.dp)
+                                            .aspectRatio(1f)
+                                    ) {
+                                        Image(
+                                            painter = rememberAsyncImagePainter(uri),
+                                            contentDescription = "Imagen del sitio",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .clip(RoundedCornerShape(8.dp))
+                                        )
+                                        IconButton(
+                                            onClick = { images = images - uri },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(4.dp)
+                                                .size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Eliminar imagen",
+                                                tint = Color.White,
+                                                modifier = Modifier
+                                                    .background(
+                                                        Color.Black.copy(alpha = 0.5f),
+                                                        CircleShape
+                                                    )
+                                                    .padding(4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Rating input
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Rating: ${"%.1f".format(Locale.US, newRating)}")
+                            Slider(
+                                value = newRating.toFloat(),
+                                onValueChange = { newValue ->
+                                    newRating = "%.1f".format(Locale.US, newValue).toDouble()
+                                },
+                                valueRange = 0f..5f,
+                                steps = 40,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp)
+                                    .height(48.dp)
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(onClick = {
+                                scope.launch {
+                                    try {
+                                        val uploadedUrls = mutableListOf<String>()
+                                        images.forEach { uri ->
+                                            uploadedUrls.add(uri.toString()) // TODO: Hardcode temporal
+                                            /*val imageRef = storage.reference
+                                                .child("reviews/${System.currentTimeMillis()}.jpg")
+
+                                            val uploadTask = imageRef.putFile(uri)
+                                            uploadTask.await()
+                                            val downloadUrl = imageRef.downloadUrl.await().toString()
+                                            uploadedUrls.add(downloadUrl)*/
+                                        }
+
+                                        val camperSiteReview = hashMapOf(
+                                            "user_name" to (Firebase.auth.currentUser?.displayName ?: "Anonymous"),
+                                            "rating" to newRating,
+                                            "date" to java.util.Date(),
+                                            "comment" to newComment,
+                                            "images" to uploadedUrls
+                                        )
+
+                                        val caperSiteReviewId = db.collection("camper_site_reviews").document()
+                                        caperSiteReviewId.set(camperSiteReview).await()
+
+                                        val camperSiteId = db.collection("camper_sites").document(site.id)
+                                        camperSiteId.update("reviews", FieldValue.arrayUnion(caperSiteReviewId)).await()
+
+                                        Log.d("Review", "Reseña guardada correctamente")
+                                        showNewReviewForm = false
+                                        newComment = ""
+                                        newRating = 0.0
+                                        images = listOf()
+
+                                    } catch (e: Exception) {
+                                        Log.e("Review", "Error guardando la review", e)
+                                    }
+                                }
+                            }) {
+                                Text("Guardar")
+                            }
+                        }
+                    }
+
+                    val reviewsToShow = if (showAllReviews) site.reviews else site.reviews.take(3)
+                    reviewsToShow.forEach { review ->
                         ReviewItem(review = review)
                         if (review != site.reviews.last()) {
                             Divider(modifier = Modifier.padding(vertical = 8.dp))
@@ -454,10 +625,10 @@ fun CamperSiteScreen(
 
                     if (site.reviews.size > 3) {
                         TextButton(
-                            onClick = { /* Show all reviews */ },
+                            onClick = { showAllReviews = !showAllReviews },
                             modifier = Modifier.align(Alignment.End)
                         ) {
-                            Text("See all ${site.reviews.size} reviews")
+                            Text(if (showAllReviews) "Show less" else "See all ${site.reviews.size} reviews")
                         }
                     }
                 }

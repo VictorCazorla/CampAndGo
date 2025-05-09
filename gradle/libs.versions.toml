@@ -15,6 +15,7 @@ animationCoreLint = "1.8.0-beta03"
 places = "4.1.0"
 composeMaterial = "1.4.1"
 playServicesGames = "23.2.0"
+firebaseStorageKtx = "21.0.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -38,6 +39,7 @@ androidx-animation-core-lint = { group = "androidx.compose.animation", name = "a
 places = { group = "com.google.android.libraries.places", name = "places", version.ref = "places" }
 androidx-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "composeMaterial" }
 play-services-games = { group = "com.google.android.gms", name = "play-services-games", version.ref = "playServicesGames" }
+firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorageKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
