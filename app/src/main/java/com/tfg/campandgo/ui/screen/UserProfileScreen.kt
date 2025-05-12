@@ -65,6 +65,8 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     var tempVisitedPlaces by remember { mutableIntStateOf(0) }
     var tempReviews by remember { mutableIntStateOf(0) }
 
+    val profileCameraImageUri = remember { mutableStateOf<Uri?>(null) }
+
     // For image picking
     rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -87,6 +89,37 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 val downloadUrl = uploadToFirebase(it, "banner_images", context)
                 downloadUrl?.let { url ->
                     tempBannerImage = url
+                }
+            }
+        }
+    }
+
+    val profileImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            scope.launch {
+                val downloadUrl = uploadToFirebase(it, "profile_images", context)
+                downloadUrl?.let { url ->
+                    tempUserImage = url
+                    // Actualiza la vista inmediatamente
+                    userImage = url
+                }
+            }
+        }
+    }
+
+    val profileCameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            profileCameraImageUri.value?.let { uri ->
+                scope.launch {
+                    val downloadUrl = uploadToFirebase(uri, "profile_images", context)
+                    downloadUrl?.let { url ->
+                        tempUserImage = url
+                        userImage = url // Actualiza la vista inmediatamente
+                    }
                 }
             }
         }
@@ -142,14 +175,17 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         }
     }
 
-    // Function to save changes
     fun saveChanges() {
         scope.launch {
             try {
+                // Asegúrate de que tempUserImage no esté vacío
+                val finalUserImage = if (tempUserImage.isNotEmpty()) tempUserImage else userImage
+                val finalBannerImage = if (tempBannerImage.isNotEmpty()) tempBannerImage else bannerImage
+
                 val updates = mapOf(
                     "user_name" to tempUserName,
-                    "user_image" to tempUserImage,
-                    "banner_image" to tempBannerImage,
+                    "user_image" to finalUserImage,
+                    "banner_image" to finalBannerImage,
                     "camper_history" to tempCamperHistory,
                     "tag_list" to tempTagList,
                     "visited_places" to tempVisitedPlaces,
@@ -157,17 +193,12 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                     "email" to email
                 )
 
-                val snapshot = db.collection("users").document(email).get().await()
-                if (!snapshot.exists()) {
-                    db.collection("users").document(email).set(updates).await()
-                } else {
-                    db.collection("users").document(email).update(updates).await()
-                }
+                db.collection("users").document(email).set(updates).await()
 
-                // Update main values
+                // Actualiza todos los estados
                 userName = tempUserName
-                userImage = tempUserImage
-                bannerImage = tempBannerImage
+                userImage = finalUserImage
+                bannerImage = finalBannerImage
                 camperHistory = tempCamperHistory
                 tagList = tempTagList
                 visitedPlaces = tempVisitedPlaces
@@ -326,6 +357,38 @@ fun UserProfileScreen(email: String, navigator: NavController) {
             )
         }
 
+        var showProfileImagePickerDialog by remember { mutableStateOf(false) }
+
+        // Diálogo para imagen de perfil
+        if (showProfileImagePickerDialog) {
+            AlertDialog(
+                onDismissRequest = { showProfileImagePickerDialog = false },
+                title = { Text("Seleccionar imagen de perfil") },
+                text = {
+                    Column {
+                        Text("Tomar foto con cámara", modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val uri = createImageFile(context)
+                                profileCameraImageUri.value = uri
+                                profileCameraLauncher.launch(uri)
+                                showProfileImagePickerDialog = false
+                            }
+                            .padding(8.dp))
+                        Text("Elegir desde galería", modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                profileImageLauncher.launch("image/*")
+                                showProfileImagePickerDialog = false
+                            }
+                            .padding(8.dp))
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {}
+            )
+        }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -460,10 +523,12 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                             )
 
-                            // Profile picture
                             AsyncImage(
-                                model = if (isEditing) tempUserImage.ifEmpty { "https://example.com/default_profile.jpg" }
-                                else userImage.ifEmpty { "https://example.com/default_profile.jpg" },
+                                model = if (isEditing) {
+                                    tempUserImage.ifEmpty { userImage.ifEmpty { "https://example.com/default_profile.jpg" } }
+                                } else {
+                                    userImage.ifEmpty { "https://example.com/default_profile.jpg" }
+                                },
                                 contentDescription = "Profile picture",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
@@ -471,7 +536,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                                     .clip(CircleShape)
                                     .border(4.dp, Color.White, CircleShape)
                                     .clickable(enabled = isEditing) {
-                                        showImagePickerDialog = true
+                                        showProfileImagePickerDialog = true
                                     }
                             )
                         }
@@ -923,14 +988,24 @@ fun Chip(
 }
 
 suspend fun uploadToFirebase(uri: Uri, folder: String, context: Context): String? {
-    val storageRef = FirebaseStorage.getInstance().reference
-    val imageRef = storageRef.child("$folder/${UUID.randomUUID()}.jpg")
-
     return try {
-        imageRef.putFile(uri).await()
-        imageRef.downloadUrl.await().toString()
+        val storageRef = FirebaseStorage.getInstance().reference
+        val imageRef = storageRef.child("$folder/${UUID.randomUUID()}.jpg")
+
+        // Sube el archivo
+        val uploadTask = imageRef.putFile(uri).await()
+
+        // Obtiene la URL de descarga
+        val downloadUrl = imageRef.downloadUrl.await()
+
+        downloadUrl.toString().also { url ->
+            // Verifica que la URL no esté vacía
+            if (url.isEmpty()) {
+                throw Exception("URL de descarga vacía")
+            }
+        }
     } catch (e: Exception) {
-        Toast.makeText(context, "Error al subir imagen", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Error al subir imagen: ${e.message}", Toast.LENGTH_LONG).show()
         null
     }
 }

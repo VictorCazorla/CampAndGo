@@ -26,12 +26,9 @@ fun LocationFetcher(onLocationFetched: (LatLng) -> Unit) {
     // Lanza un efecto al inicializar el componente
     LaunchedEffect(Unit) {
         // Comprueba si se tiene el permiso de ubicación precisa
-        if (ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED
         ) {
-            // Intenta obtener la última ubicación conocida
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 location?.let { onLocationFetched(LatLng(it.latitude, it.longitude)) }
             }

@@ -161,7 +161,7 @@ fun NavigatorHub(
     LaunchedEffect(isUserLoggedIn) {
         if (isUserLoggedIn) {
             navigator.navigate(Routes.HOME) {
-                popUpTo(0) // Limpia el back stack completo
+                popUpTo(0)
             }
         }
     }
@@ -187,7 +187,9 @@ fun NavigatorHub(
                 onBackToLoginClick = { navigator.navigate(Routes.LOGIN) }
             )
         }
-        composable(Routes.HOME) { HomeScreen(navigator = navigator) }
+        composable(Routes.HOME) {
+            HomeScreen(navigator = navigator)
+        }
         composable(
             route = Routes.USER_PROFILE,
             arguments = listOf(
@@ -218,7 +220,6 @@ fun NavigatorHub(
                 navArgument("longitude") { type = NavType.FloatType }
             )
         ) { backStackEntry ->
-            Log.e("AddCamperSiteScreen", "latitude: ${backStackEntry.arguments?.getString("latitude")}, longitude: ${backStackEntry.arguments?.getString("longitude")}")
             val latitude = backStackEntry.arguments?.getFloat("latitude")?.toDouble() ?: 0.0
             val longitude = backStackEntry.arguments?.getFloat("longitude")?.toDouble() ?: 0.0
             AddCamperSiteScreen(latitude = latitude, longitude = longitude, navigator = navigator)

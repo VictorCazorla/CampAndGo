@@ -105,7 +105,6 @@ fun AddCamperSiteScreen(
     longitude: Double,
     navigator: NavController
 ) {
-
     // Estado del formulario
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
@@ -118,9 +117,6 @@ fun AddCamperSiteScreen(
     var images by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var showCamera by remember { mutableStateOf(false) }
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
-
-    var showImageSourceDialog by remember { mutableStateOf(false) }
-    var showGallery by remember { mutableStateOf(false) }
 
     // Contexto
     val context = LocalContext.current
@@ -169,53 +165,6 @@ fun AddCamperSiteScreen(
             launcher.launch(capturedImageUri!!)
         }
     }
-
-    // Selector de fuente de imagen
-    if (showImageSourceDialog) {
-        AlertDialog(
-            onDismissRequest = { showImageSourceDialog = false },
-            title = { Text("Seleccionar fuente de imagen") },
-            text = { Text("¿De dónde quieres seleccionar la imagen?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showImageSourceDialog = false
-                        showCamera = true
-                    }
-                ) {
-                    Text("Cámara")
-                }
-            },
-            dismissButton = {
-                Button(
-                    onClick = {
-                        showImageSourceDialog = false
-                        showGallery = true
-                    }
-                ) {
-                    Text("Galería")
-                }
-            }
-        )
-    }
-
-    // Manejar la selección de galería
-    if (showGallery) {
-        val galleryLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent(),
-            onResult = { uri ->
-                showGallery = false
-                uri?.let {
-                    images = images + it
-                }
-            }
-        )
-
-        LaunchedEffect(Unit) {
-            galleryLauncher.launch("image/*")
-        }
-    }
-
 
     // Diálogo para añadir amenidades
     var showAmenityDialog by remember { mutableStateOf(false) }
@@ -374,7 +323,7 @@ fun AddCamperSiteScreen(
                                     RoundedCornerShape(8.dp)
                                 )
                                 .clickable {
-                                    showImageSourceDialog = true
+                                    showCamera = true
                                 },
                             contentAlignment = Alignment.Center
                         ) {

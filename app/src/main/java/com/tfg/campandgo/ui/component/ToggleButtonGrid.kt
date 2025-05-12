@@ -2,96 +2,94 @@ package com.tfg.campandgo.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun ToggleButtonGrid(
-    onFilterSelected: (List<String>) -> Unit
+    onFilterSelected: (List<String>) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    // Lista mutable para almacenar los nombres de los botones seleccionados
     val selectedButtons = remember { mutableStateListOf<String>() }
+    var expanded by remember { mutableStateOf(false) }
+    val campArray = listOf("campground", "rv_park", "park")
 
-    // Lista de botones con sus términos asociados
     val buttons = listOf(
-        Pair("restaurant", Icons.Default.Restaurant),
-        Pair("lodging", Icons.Default.Hotel),
-        Pair("car_repair", Icons.Default.Build),
-        Pair("gas_station", Icons.Default.LocalGasStation),
-        Pair("supermarket", Icons.Default.LocalGroceryStore),
-        Pair("parking", Icons.Default.LocalParking),
-        Pair("laundry", Icons.Default.LocalLaundryService),
-        Pair("rest_stop", Icons.Default.Place),
+        "restaurant" to Icons.Default.Restaurant,
+        "lodging" to Icons.Default.Hotel,
+        "car_repair" to Icons.Default.Build,
+        "gas_station" to Icons.Default.LocalGasStation,
+        "supermarket" to Icons.Default.LocalGroceryStore,
+        "parking" to Icons.Default.LocalParking,
+        "laundry" to Icons.Default.LocalLaundryService,
+        "camping" to Icons.Default.Place,
     )
 
-    val campArray = listOf("campground","rv_park","park")
+    // Solo IconButton para filtros, alineado con los demás
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                imageVector = Icons.Default.FilterList,
+                contentDescription = "Filtrar",
+                modifier = Modifier.size(28.dp)
+            )
+        }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(end=16.dp, top=55.dp) // Añade padding solo a la izquierda
-    ) {
-        buttons.forEach { (key, icon) ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 15.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End
-            ) {
-                ToggleButton(
-                    icon = icon,
-                    isSelected = selectedButtons.contains(key),
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            buttons.forEach { (key, icon) ->
+                val isSelected = selectedButtons.contains(key)
+
+                DropdownMenuItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            else Color.Transparent
+                        ),
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Start,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.width(16.dp))
+                            Text(key.replace("_", " ").replaceFirstChar { it.uppercase() })
+                        }
+                    },
                     onClick = {
-                        if (selectedButtons.contains(key)) {
-                            if(key == "camping") {
-                                campArray.forEach { selectedButtons.remove(it) }
-                            }
+                        if (isSelected) {
+                            if (key == "camping") campArray.forEach { selectedButtons.remove(it) }
                             selectedButtons.remove(key)
                         } else {
-                            if(key == "camping") {
-                                campArray.forEach { selectedButtons.add(it) }
-                            }
+                            if (key == "camping") campArray.forEach { selectedButtons.add(it) }
                             selectedButtons.add(key)
                         }
-                        onFilterSelected(selectedButtons)
-                    },
+                        onFilterSelected(selectedButtons.toList())
+                    }
                 )
             }
+
+            DropdownMenuItem(
+                text = {
+                    Text("Cerrar", color = MaterialTheme.colorScheme.primary)
+                },
+                onClick = { expanded = false }
+            )
         }
     }
 }
 
-@Composable
-fun ToggleButton(
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val backgroundColor = if (isSelected) Color.Cyan else Color.LightGray
-    val contentColor = if (isSelected) Color.White else Color.Black
-
-    IconButton(
-        onClick = onClick,
-        modifier = modifier
-            .size(36.dp)
-            .background(backgroundColor, shape = CircleShape)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = contentColor,
-            modifier = Modifier.size(28.dp)
-        )
-    }
-}

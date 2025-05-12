@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -37,71 +38,99 @@ fun SearchBarWithSuggestions(
     suggestions: List<Prediction>,
     onSuggestionSelected: (Prediction) -> Unit,
     onCenterMap: () -> Unit,
-    onSearch: () -> Unit
+    onSearch: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Column(modifier = Modifier.padding(8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically, // Alinea verticalmente los elementos
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(8.dp)
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                label = { Text("Buscar ubicación") },
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 56.dp), // Establece una altura mínima igual a los botones
-            )
-
-            // Botón de búsqueda
-            IconButton(
-                onClick = onSearch,
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = CircleShape
-                    )
+            // Fila de búsqueda
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Buscar ubicación",
-                    tint = MaterialTheme.colorScheme.primary
+                // Campo de búsqueda
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    label = { Text("Buscar ubicación") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 56.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                    singleLine = true
                 )
+
+                // Botón de búsqueda explícita
+                IconButton(
+                    onClick = onSearch,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Buscar",
+                    )
+                }
+
+                // Botón de centrar mapa
+                IconButton(
+                    onClick = onCenterMap,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = "Centrar mapa",
+                    )
+                }
             }
 
-            // Botón de centrar mapa
-            IconButton(
-                onClick = onCenterMap,
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = CircleShape
-                    )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MyLocation,
-                    contentDescription = "Centrar mapa",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-
-        if (suggestions.isNotEmpty()) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 500.dp)
-            ) {
-                items(suggestions) { prediction ->
-                    SuggestionItem(
-                        prediction = prediction,
-                        onSuggestionSelected = onSuggestionSelected
-                    )
+            // Lista de sugerencias
+            if (suggestions.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 200.dp)
+                        .padding(top = 8.dp, bottom = 8.dp)
+                ) {
+                    items(suggestions) { prediction ->
+                        SuggestionItem(
+                            prediction = prediction,
+                            onSuggestionSelected = onSuggestionSelected,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         }
