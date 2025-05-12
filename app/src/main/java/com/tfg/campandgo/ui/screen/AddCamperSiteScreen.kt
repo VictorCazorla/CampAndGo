@@ -1,6 +1,7 @@
 package com.tfg.campandgo.ui.screen
 
 import android.content.ContentValues
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -78,9 +79,15 @@ import com.google.firebase.ktx.Firebase
 import com.tfg.campandgo.data.model.CamperSite
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavController
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.util.Locale
 import java.util.UUID
 
@@ -110,6 +117,9 @@ fun AddCamperSiteScreen(
     var images by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var showCamera by remember { mutableStateOf(false) }
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    var showImageSourceDialog by remember { mutableStateOf(false) }
+    var showGallery by remember { mutableStateOf(false) }
 
     // Contexto
     val context = LocalContext.current
@@ -159,10 +169,58 @@ fun AddCamperSiteScreen(
         }
     }
 
+    // Selector de fuente de imagen
+    if (showImageSourceDialog) {
+        AlertDialog(
+            onDismissRequest = { showImageSourceDialog = false },
+            title = { Text("Seleccionar fuente de imagen") },
+            text = { Text("¿De dónde quieres seleccionar la imagen?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showImageSourceDialog = false
+                        showCamera = true
+                    }
+                ) {
+                    Text("Cámara")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        showImageSourceDialog = false
+                        showGallery = true
+                    }
+                ) {
+                    Text("Galería")
+                }
+            }
+        )
+    }
+
+    // Manejar la selección de galería
+    if (showGallery) {
+        val galleryLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+            onResult = { uri ->
+                showGallery = false
+                uri?.let {
+                    images = images + it
+                }
+            }
+        )
+
+        LaunchedEffect(Unit) {
+            galleryLauncher.launch("image/*")
+        }
+    }
+
+
     // Diálogo para añadir amenidades
     var showAmenityDialog by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
     val amenityOptions = listOf("Wifi", "Agua potable", "Electricidad", "Duchas", "Lavandería", "Baños", "Zona de picnic", "Barbacoa", "Piscina", "Área infantil", "Aparcamiento", "Tienda", "Restaurante", "Recepción 24h", "Alquiler de bicicletas", "Zona para mascotas")
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -180,13 +238,9 @@ fun AddCamperSiteScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = {
-                            // Navega hacia atrás con manejo de errores
                             try {
-                                if (!navigator.popBackStack()) {
-                                    navigator.navigateUp()
-                                }
+                                navigator.popBackStack()
                             } catch (e: Exception) {
-                                Log.e("Navigation", "Error al navegar hacia atrás", e)
                                 navigator.navigateUp()
                             }
                         }
@@ -202,22 +256,40 @@ fun AddCamperSiteScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    if(validateFields()) {
-                        val newCamperSite = CamperSite(
-                            id = UUID.randomUUID().toString(),
-                            name = name,
-                            formattedAddress = address,
-                            description = description,
-                            mainImageUrl = images.firstOrNull()?.toString() ?: "",
-                            images = images.map { it.toString() },
-                            rating = rating,
-                            reviewCount = 0,
-                            amenities = amenities,
-                            reviews = emptyList(),
-                            location = GeoPoint(latitude, longitude)
-                        )
-                        saveCamperSiteToFirestore(newCamperSite)
-                        navigator.popBackStack() // Vuelve atrás después de guardar
+                    if (validateFields()) {
+                        try {
+                            scope.launch {
+                                try {
+                                    val imageUrls = uploadImagesToFirebaseStorage(context, images)
+
+                                    val newCamperSite = CamperSite(
+                                        id = UUID.randomUUID().toString(),
+                                        name = name,
+                                        formattedAddress = address,
+                                        description = description,
+                                        mainImageUrl = imageUrls.firstOrNull() ?: "",
+                                        images = imageUrls,
+                                        rating = rating,
+                                        reviewCount = 0,
+                                        amenities = amenities,
+                                        reviews = emptyList(),
+                                        location = GeoPoint(latitude, longitude)
+                                    )
+
+                                    saveCamperSiteToFirestore(newCamperSite)
+                                    withContext(Dispatchers.Main) {
+                                        navigator.popBackStack()
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("AddCamperSite", "Error saving camper site", e)
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -301,7 +373,7 @@ fun AddCamperSiteScreen(
                                     RoundedCornerShape(8.dp)
                                 )
                                 .clickable {
-                                    showCamera = true
+                                    showImageSourceDialog = true
                                 },
                             contentAlignment = Alignment.Center
                         ) {
@@ -584,7 +656,8 @@ fun saveCamperSiteToFirestore(camperSite: CamperSite) {
             "rating" to camperSite.rating,
             "review_count" to camperSite.reviewCount,
             "amenities" to camperSite.amenities,
-            "reviews" to listOf<DocumentReference>()
+            "reviews" to listOf<DocumentReference>(),
+            "location" to GeoPoint(camperSite.location.latitude, camperSite.location.longitude)
         )
 
         db.collection("camper_sites")
@@ -599,4 +672,27 @@ fun saveCamperSiteToFirestore(camperSite: CamperSite) {
     } catch (e: Exception) {
         Log.d("Firestore", "Error preparando datos", e)
     }
+}
+suspend fun uploadImagesToFirebaseStorage(
+    context: Context,
+    uris: List<Uri>
+): List<String> = withContext(Dispatchers.IO) {
+    val storage = FirebaseStorage.getInstance().reference
+    val downloadUrls = mutableListOf<String>()
+
+    for (uri in uris) {
+        try {
+            val fileName = "camper_sites/${UUID.randomUUID()}.jpg"
+            val fileRef = storage.child(fileName)
+
+            val uploadTask = fileRef.putFile(uri).await()
+            val url = fileRef.downloadUrl.await().toString()
+
+            downloadUrls.add(url)
+        } catch (e: Exception) {
+            Log.e("Storage", "Error al subir imagen: ${uri}", e)
+        }
+    }
+
+    return@withContext downloadUrls
 }
