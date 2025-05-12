@@ -2,7 +2,6 @@ package com.tfg.campandgo.ui.screen
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -12,7 +11,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,7 +28,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
@@ -69,7 +66,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     var tempReviews by remember { mutableIntStateOf(0) }
 
     // For image picking
-    val profileImageLauncher = rememberLauncherForActivityResult(
+    rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
@@ -82,7 +79,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         }
     }
 
-    val bannerImageLauncher = rememberLauncherForActivityResult(
+    rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
@@ -937,5 +934,3 @@ suspend fun uploadToFirebase(uri: Uri, folder: String, context: Context): String
         null
     }
 }
-
-

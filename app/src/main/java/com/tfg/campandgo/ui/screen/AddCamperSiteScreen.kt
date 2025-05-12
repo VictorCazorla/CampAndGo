@@ -105,6 +105,7 @@ fun AddCamperSiteScreen(
     longitude: Double,
     navigator: NavController
 ) {
+
     // Estado del formulario
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }

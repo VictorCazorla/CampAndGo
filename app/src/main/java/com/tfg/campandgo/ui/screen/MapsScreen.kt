@@ -34,6 +34,7 @@ import com.tfg.campandgo.ui.component.PlaceDetailsSection
 import com.tfg.campandgo.ui.component.SearchBarWithSuggestions
 import com.tfg.campandgo.ui.component.ToggleButtonGrid
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
+import java.util.Locale
 
 /**
  * Pantalla que muestra un mapa interactivo con funcionalidades de búsqueda y visualización de lugares cercanos.
@@ -181,8 +182,8 @@ fun MapScreen(
                         snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${"%.4f".format(location.longitude)}",
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
                         onClick = {
-                            val latitude = "%.4f".format(location.latitude)
-                            val longitude = "%.4f".format(location.longitude)
+                            val latitude = "%.4f".format(Locale.US,location.latitude).toFloat()
+                            val longitude = "%.4f".format(Locale.US,location.longitude).toFloat()
                             val route = "add_camper_site/$latitude/$longitude"
                             navigator.navigate(route)
                             true

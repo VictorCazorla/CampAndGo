@@ -4,6 +4,7 @@ import com.tfg.campandgo.ui.screen.HomeScreen
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -213,13 +214,13 @@ fun NavigatorHub(
         composable(
             route = Routes.ADD_CAMPER_SITE,
             arguments = listOf(
-                navArgument("latitude") { type = NavType.StringType },
-                navArgument("longitude") { type = NavType.StringType }
+                navArgument("latitude") { type = NavType.FloatType },
+                navArgument("longitude") { type = NavType.FloatType }
             )
         ) { backStackEntry ->
-            val latitude = backStackEntry.arguments?.getString("latitude")?.toDoubleOrNull() ?: 0.0
-            val longitude = backStackEntry.arguments?.getString("longitude")?.toDoubleOrNull() ?: 0.0
-
+            Log.e("AddCamperSiteScreen", "latitude: ${backStackEntry.arguments?.getString("latitude")}, longitude: ${backStackEntry.arguments?.getString("longitude")}")
+            val latitude = backStackEntry.arguments?.getFloat("latitude")?.toDouble() ?: 0.0
+            val longitude = backStackEntry.arguments?.getFloat("longitude")?.toDouble() ?: 0.0
             AddCamperSiteScreen(latitude = latitude, longitude = longitude, navigator = navigator)
         }
     }
