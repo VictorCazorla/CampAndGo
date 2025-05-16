@@ -1,7 +1,9 @@
 package com.tfg.campandgo.ui.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
@@ -41,6 +45,7 @@ import java.io.File
 import java.util.UUID
 import kotlin.math.min
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun UserProfileScreen(email: String, navigator: NavController) {
     val db = Firebase.firestore
@@ -51,10 +56,11 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     var userName by remember { mutableStateOf("Anonymous") }
     var userImage by remember { mutableStateOf("") }
     var bannerImage by remember { mutableStateOf("") }
-    var camperHistory by remember { mutableStateOf("Sobre mis viajes") }
+    var camperHistory by remember { mutableStateOf("About my trips") }
     var tagList by remember { mutableStateOf(emptyList<String>()) }
     var visitedPlaces by remember { mutableIntStateOf(0) }
     var reviews by remember { mutableIntStateOf(0) }
+    val favoriteSites = remember { mutableStateListOf<SimpleCamperSite>() }
 
     var isEditing by remember { mutableStateOf(false) }
     var tempUserName by remember { mutableStateOf("") }
@@ -102,7 +108,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 val downloadUrl = uploadToFirebase(it, "profile_images", context)
                 downloadUrl?.let { url ->
                     tempUserImage = url
-                    // Actualiza la vista inmediatamente
+                    // Updates the view immediately
                     userImage = url
                 }
             }
@@ -118,7 +124,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                     val downloadUrl = uploadToFirebase(uri, "profile_images", context)
                     downloadUrl?.let { url ->
                         tempUserImage = url
-                        userImage = url // Actualiza la vista inmediatamente
+                        userImage = url // Updates the view immediately
                     }
                 }
             }
@@ -143,7 +149,6 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         val file = File(context.cacheDir, "temp_image.jpg")
         return FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
     }
-
 
     LaunchedEffect(email) {
         try {
@@ -170,7 +175,34 @@ fun UserProfileScreen(email: String, navigator: NavController) {
             }
         } catch (e: Exception) {
             scope.launch {
-                snackbarHostState.showSnackbar("Error al cargar el perfil: ${e.message}")
+                snackbarHostState.showSnackbar("Error loading profile: ${e.message}")
+            }
+        }
+    }
+
+    // Favorite camper sites
+    LaunchedEffect(email) {
+        scope.launch {
+            try {
+                val userDoc = FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(email)
+                    .get()
+                    .await()
+
+                val favoriteRefs = userDoc.get("favorite_camper_sites") as? List<DocumentReference> ?: emptyList()
+
+                favoriteSites.clear()
+                favoriteRefs.forEach { docRef ->
+                    val siteSnapshot = docRef.get().await()
+                    val siteID = siteSnapshot.getString("id") ?: ""
+                    val siteName = siteSnapshot.getString("name") ?: "Unknown name"
+                    val siteRating = siteSnapshot.getDouble("rating") ?: 0.0
+
+                    favoriteSites.add(SimpleCamperSite(siteID, siteName, siteRating))
+                }
+            } catch (e: Exception) {
+                Log.e("FavoriteSites", "Error fetching favorite sites", e)
             }
         }
     }
@@ -178,9 +210,8 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     fun saveChanges() {
         scope.launch {
             try {
-                // Asegúrate de que tempUserImage no esté vacío
-                val finalUserImage = if (tempUserImage.isNotEmpty()) tempUserImage else userImage
-                val finalBannerImage = if (tempBannerImage.isNotEmpty()) tempBannerImage else bannerImage
+                val finalUserImage = tempUserImage.ifEmpty { userImage }
+                val finalBannerImage = tempBannerImage.ifEmpty { bannerImage }
 
                 val updates = mapOf(
                     "user_name" to tempUserName,
@@ -195,7 +226,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
 
                 db.collection("users").document(email).set(updates).await()
 
-                // Actualiza todos los estados
+                // Update all statuses
                 userName = tempUserName
                 userImage = finalUserImage
                 bannerImage = finalBannerImage
@@ -206,112 +237,111 @@ fun UserProfileScreen(email: String, navigator: NavController) {
 
                 isEditing = false
             } catch (e: Exception) {
-                snackbarHostState.showSnackbar("Error al actualizar el perfil: ${e.message}")
+                snackbarHostState.showSnackbar("Error updating profile: ${e.message}")
             }
         }
     }
 
-
-    // Sección de Logros
+    // Achievements Section
     val achievements = remember(visitedPlaces, reviews) {
         listOf(
-            // Logros basados en lugares visitados
+            // Achievements based on places visited
             AchievementData(
                 icon = Icons.Default.Place,
-                title = "Primeros pasos",
-                description = "Visita tu primer lugar",
+                title = "First steps",
+                description = "Visit your first place",
                 current = minOf(visitedPlaces, 1),
                 target = 1,
                 color = Color(0xFF0A940F)
             ),
             AchievementData(
                 icon = Icons.Default.Explore,
-                title = "Explorador novato",
-                description = "Visita 5 lugares",
+                title = "Novice explorer",
+                description = "Visit 5 places",
                 current = minOf(visitedPlaces, 5),
                 target = 5,
                 color = Color(0xFF8A61D5)
             ),
             AchievementData(
                 icon = Icons.Default.TravelExplore,
-                title = "Viajero experimentado",
-                description = "Visita 15 lugares",
+                title = "Experienced traveler",
+                description = "Visit 15 places",
                 current = minOf(visitedPlaces, 15),
                 target = 15,
                 color = Color(0xE6D770D7)
             ),
             AchievementData(
                 icon = Icons.Default.Flag,
-                title = "Maestro explorador",
-                description = "Visita 30 lugares",
+                title = "Scout Master",
+                description = "Visit 30 places",
                 current = minOf(visitedPlaces, 30),
                 target = 30,
                 color = Color(0xFF388E3C)
             ),
             AchievementData(
                 icon = Icons.Default.Public,
-                title = "Leyenda campista",
-                description = "Visita 50 lugares",
+                title = "Camper legend",
+                description = "Visit 50 places",
                 current = minOf(visitedPlaces, 50),
                 target = 50,
                 color = Color(0xFFFFA000)
             ),
 
-            // Logros basados en reseñas
+            // Review based on achievements
             AchievementData(
                 icon = Icons.Default.StarOutline,
-                title = "Primera reseña",
-                description = "Escribe tu primera reseña",
+                title = "First review",
+                description = "Write your first review",
                 current = minOf(reviews, 1),
                 target = 1,
                 color = Color(0xFF00BCD4)
             ),
             AchievementData(
                 icon = Icons.Default.StarHalf,
-                title = "Crítico principiante",
-                description = "Escribe 5 reseñas",
+                title = "Beginner critic",
+                description = "Write 5 reviews",
                 current = minOf(reviews, 5),
                 target = 5,
                 color = Color(0xFF673AB7)
             ),
             AchievementData(
                 icon = Icons.Default.Star,
-                title = "Experto en reseñas",
-                description = "Escribe 20 reseñas",
+                title = "Review Expert",
+                description = "Write 20 reviews",
                 current = minOf(reviews, 20),
                 target = 20,
                 color = Color(0xFFFFC107)
             ),
             AchievementData(
                 icon = Icons.Default.AutoAwesome,
-                title = "Gurú de reseñas",
-                description = "Escribe 50 reseñas",
+                title = "Review Guru",
+                description = "Write 50 reviews",
                 current = minOf(reviews, 50),
                 target = 50,
                 color = Color(0xFFE91E63)
             ),
 
-            // Logros combinados
+            // Combined achievements
             AchievementData(
                 icon = Icons.Default.ThumbsUpDown,
-                title = "Equilibrio perfecto",
-                description = "10 lugares + 10 reseñas",
+                title = "Perfect balance",
+                description = "10 places + 10 reviews",
                 current = minOf(min(visitedPlaces, reviews), 10),
                 target = 10,
                 color = Color(0xFF9C27B0)
             ),
             AchievementData(
                 icon = Icons.Default.LocalActivity,
-                title = "Embajador campista",
-                description = "25 lugares + 25 reseñas",
+                title = "Camper Ambassador",
+                description = "25 places + 25 reviews",
                 current = minOf(min(visitedPlaces, reviews), 25),
                 target = 25,
                 color = Color(0xFF3F51B5)
             ),
             AchievementData(
                 icon = Icons.Default.Stars,
-                title = "Leyenda total",
-                description = "50 lugares + 50 reseñas",
+                title = "Total legend",
+                description = "50 places + 50 reviews",
                 current = minOf(min(visitedPlaces, reviews), 50),
                 target = 50,
                 color = Color(0xFFFF5722)
@@ -323,17 +353,17 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
 
-        // Estado para mostrar el diálogo
+        // State to display the dialog
         var showImagePickerDialog by remember { mutableStateOf(false) }
 
-        // Mostrar diálogo de selección (cámara o galería)
+        // Show selection dialog (camera or gallery)
         if (showImagePickerDialog) {
             AlertDialog(
                 onDismissRequest = { showImagePickerDialog = false },
-                title = { Text("Seleccionar imagen") },
+                title = { Text("Select image") },
                 text = {
                     Column {
-                        Text("Tomar foto con cámara", modifier = Modifier
+                        Text("Take a photo with a camera", modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
                                 val uri = createImageFile(context)
@@ -342,7 +372,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                                 showImagePickerDialog = false
                             }
                             .padding(8.dp))
-                        Text("Elegir desde galería", modifier = Modifier
+                        Text("Choose from gallery", modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
                                 galleryLauncher.launch("image/*")
@@ -358,14 +388,14 @@ fun UserProfileScreen(email: String, navigator: NavController) {
 
         var showProfileImagePickerDialog by remember { mutableStateOf(false) }
 
-        // Diálogo para imagen de perfil
+        // Profile picture dialog
         if (showProfileImagePickerDialog) {
             AlertDialog(
                 onDismissRequest = { showProfileImagePickerDialog = false },
-                title = { Text("Seleccionar imagen de perfil") },
+                title = { Text("Select profile image") },
                 text = {
                     Column {
-                        Text("Tomar foto con cámara", modifier = Modifier
+                        Text("Take a photo with a camera", modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
                                 val uri = createImageFile(context)
@@ -374,7 +404,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                                 showProfileImagePickerDialog = false
                             }
                             .padding(8.dp))
-                        Text("Elegir desde galería", modifier = Modifier
+                        Text("Choose from gallery", modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
                                 profileImageLauncher.launch("image/*")
@@ -622,8 +652,8 @@ fun UserProfileScreen(email: String, navigator: NavController) {
 
                         // Button to add new tags
                         var expanded by remember { mutableStateOf(false) }
-                        val suggestedTags = listOf("Acampada", "Senderismo", "Montaña", "Playa",
-                            "Aventura", "Familia", "Mochilero", "Naturaleza", "Minimalista")
+                        val suggestedTags = listOf("Camping", "Hiking", "Mountain", "Beach",
+                            "Adventure", "Family", "Backpacking", "Nature", "Minimalist")
 
                         Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
                             IconButton(
@@ -634,7 +664,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Add,
-                                    contentDescription = "Añadir etiqueta",
+                                    contentDescription = "Add tag",
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
@@ -676,7 +706,6 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 }
             }
 
-
             // Camper Story section
             item {
                 if (camperHistory.isNotEmpty() || isEditing) {
@@ -688,7 +717,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                             .padding(horizontal = 8.dp)
                     ) {
                         Text(
-                            text = "Sobre mi",
+                            text = "About me",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onBackground
@@ -750,7 +779,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Place,
-                                contentDescription = "Lugares visitados",
+                                contentDescription = "Places visited",
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(30.dp)
                             )
@@ -763,7 +792,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                                 )
                             )
                             Text(
-                                text = "Lugares",
+                                text = "Places",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
                                 )
@@ -787,7 +816,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Star,
-                                contentDescription = "Reseñas",
+                                contentDescription = "Reviews",
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.size(30.dp)
                             )
@@ -800,7 +829,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                                 )
                             )
                             Text(
-                                text = "Reseñas",
+                                text = "Reviews",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.9f)
                                 )
@@ -810,10 +839,72 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 }
             }
 
+            // Favorite camper sites
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 100.dp, max = 300.dp)
+                        .padding(bottom = 16.dp)
+                        .background(Color.White, RoundedCornerShape(8.dp))
+                        .padding(16.dp)
+                ) {
+                    Column {
+                        Text(
+                            text = "Favorite camper sites",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        if (favoriteSites.isEmpty()) {
+                            Text(
+                                text = "There are no favorite campsites yet",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(favoriteSites) { site ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 8.dp)
+                                            .clickable {
+                                                navigator.navigate("camper_site/${site.id}")
+                                            },
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = site.name,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.Star,
+                                                contentDescription = "Rating",
+                                                tint = Color(0xFFFFC107),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Text(
+                                                text = String.format("%.1f", site.rating),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                modifier = Modifier.padding(start = 4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // Achievements title
             item {
                 Text(
-                    text = "Mis Logros (${achievements.count { it.current >= it.target }}/${achievements.size})",
+                    text = "My Achievements (${achievements.count { it.current >= it.target }}/${achievements.size})",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
@@ -844,6 +935,13 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         hostState = snackbarHostState
     )
 }
+
+// Simplified CamperSite object
+data class SimpleCamperSite(
+    val id: String,
+    val name: String,
+    val rating: Double
+)
 
 data class AchievementData(
     val icon: ImageVector,
@@ -914,7 +1012,7 @@ fun AchievementItem(
                 if (isCompleted) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Completado",
+                        contentDescription = "Completed",
                         tint = color,
                         modifier = Modifier.size(20.dp)
                     )
@@ -932,7 +1030,7 @@ fun AchievementItem(
             )
 
             Text(
-                text = if (isCompleted) "¡Completado!"
+                text = if (isCompleted) "¡Completed!"
                 else "$currentValue/$maxValue (${(progress * 100).toInt()}%)",
                 style = MaterialTheme.typography.labelSmall.copy(
                     color = if (isCompleted) color
@@ -977,7 +1075,7 @@ fun Chip(
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Eliminar tag",
+                    contentDescription = "Delete tag",
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     modifier = Modifier.size(12.dp)
                 )
@@ -986,6 +1084,7 @@ fun Chip(
     }
 }
 
+// Uploads the image to Firebase Storage
 suspend fun uploadToFirebase(uri: Uri, folder: String, context: Context): String? {
     return try {
         val storageRef = FirebaseStorage.getInstance().reference
@@ -994,13 +1093,13 @@ suspend fun uploadToFirebase(uri: Uri, folder: String, context: Context): String
         val downloadUrl = imageRef.downloadUrl.await()
 
         downloadUrl.toString().also { url ->
-            // Verifica que la URL no esté vacía
+            // Checks that the URL is not empty
             if (url.isEmpty()) {
-                throw Exception("URL de descarga vacía")
+                throw Exception("Empty download URL")
             }
         }
     } catch (e: Exception) {
-        Toast.makeText(context, "Error al subir imagen: ${e.message}", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, "Error uploading image: ${e.message}", Toast.LENGTH_LONG).show()
         null
     }
 }

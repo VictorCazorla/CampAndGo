@@ -5,6 +5,7 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -54,6 +55,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -97,8 +99,10 @@ fun CamperSiteScreen(
     navigator: NavController
 ) {
     val scrollState = rememberScrollState()
+    val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     val db = Firebase.firestore
+    val userEmail = Firebase.auth.currentUser?.email
     var expandedImageUrl by remember { mutableStateOf<String?>(null) }
 
     // OpenWeather
@@ -145,7 +149,7 @@ fun CamperSiteScreen(
             val camperSitesSnapshot = db.collection("camper_sites")
                 .whereEqualTo("id", camperSiteID)
                 .get()
-                .await()  // Espera respuesta de manera síncrona
+                .await()  // Wait for response synchronously
 
             if (camperSitesSnapshot.isEmpty) {
                 Log.d("LaunchCampsite", "No camper site found")
@@ -207,7 +211,7 @@ fun CamperSiteScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable { expandedImageUrl = null }, // para cerrar al pulsar fuera
+                    .clickable { expandedImageUrl = null }, // To close when pressing outside
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -650,7 +654,6 @@ fun CamperSiteScreen(
                                 scope.launch {
                                     isUploading = true
                                     try {
-                                        val userEmail = Firebase.auth.currentUser?.email
                                         var userName = "Anonymous"
 
                                         // Gets user name
@@ -760,7 +763,30 @@ fun CamperSiteScreen(
             .padding(16.dp)
     ) {
         Button(
-            onClick = { /* Save on favorites */},
+            onClick = {
+                scope.launch {
+                    try {
+                        if (userEmail != null) {
+                            val userRef = db.collection("users").document(userEmail)
+                            val camperSiteRef = db.document("/camper_sites/${site.id}")
+
+                            // Get current favorites
+                            val snapshot = userRef.get().await()
+                            val favorites = snapshot.get("favorite_camper_sites") as? List<DocumentReference> ?: emptyList()
+
+                            if (favorites.any { it.id == site.id }) {
+                                userRef.update("favorite_camper_sites", FieldValue.arrayRemove(camperSiteRef)).await()
+                                Toast.makeText(context, "Site removed from favorites.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                userRef.update("favorite_camper_sites", FieldValue.arrayUnion(camperSiteRef)).await()
+                                Toast.makeText(context, "Site successfully added to favorites.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("Favorites", "Error switching favorites", e)
+                    }
+                }
+            },
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White
@@ -773,7 +799,7 @@ fun CamperSiteScreen(
         ) {
             Icon(
                 imageVector = Icons.Default.Star,
-                contentDescription = "Save to favorites",
+                contentDescription = "Toggle favorite",
                 tint = MaterialTheme.colorScheme.onPrimary
             )
         }
