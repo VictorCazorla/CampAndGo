@@ -5,6 +5,7 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -54,6 +55,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,6 +72,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
@@ -89,6 +92,11 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.runtime.DisposableEffect
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -97,8 +105,10 @@ fun CamperSiteScreen(
     navigator: NavController
 ) {
     val scrollState = rememberScrollState()
+    val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     val db = Firebase.firestore
+    val userEmail = Firebase.auth.currentUser?.email
     var expandedImageUrl by remember { mutableStateOf<String?>(null) }
 
     // OpenWeather
@@ -145,7 +155,7 @@ fun CamperSiteScreen(
             val camperSitesSnapshot = db.collection("camper_sites")
                 .whereEqualTo("id", camperSiteID)
                 .get()
-                .await()  // Espera respuesta de manera síncrona
+                .await()  // Wait for response synchronously
 
             if (camperSitesSnapshot.isEmpty) {
                 Log.d("LaunchCampsite", "No camper site found")
@@ -207,7 +217,7 @@ fun CamperSiteScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable { expandedImageUrl = null }, // para cerrar al pulsar fuera
+                    .clickable { expandedImageUrl = null }, // To close when pressing outside
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -650,7 +660,6 @@ fun CamperSiteScreen(
                                 scope.launch {
                                     isUploading = true
                                     try {
-                                        val userEmail = Firebase.auth.currentUser?.email
                                         var userName = "Anonymous"
 
                                         // Gets user name
@@ -760,7 +769,30 @@ fun CamperSiteScreen(
             .padding(16.dp)
     ) {
         Button(
-            onClick = { /* Save on favorites */},
+            onClick = {
+                scope.launch {
+                    try {
+                        if (userEmail != null) {
+                            val userRef = db.collection("users").document(userEmail)
+                            val camperSiteRef = db.document("/camper_sites/${site.id}")
+
+                            // Get current favorites
+                            val snapshot = userRef.get().await()
+                            val favorites = snapshot.get("favorite_camper_sites") as? List<DocumentReference> ?: emptyList()
+
+                            if (favorites.any { it.id == site.id }) {
+                                userRef.update("favorite_camper_sites", FieldValue.arrayRemove(camperSiteRef)).await()
+                                Toast.makeText(context, "Site removed from favorites.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                userRef.update("favorite_camper_sites", FieldValue.arrayUnion(camperSiteRef)).await()
+                                Toast.makeText(context, "Site successfully added to favorites.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("Favorites", "Error switching favorites", e)
+                    }
+                }
+            },
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White
@@ -773,7 +805,7 @@ fun CamperSiteScreen(
         ) {
             Icon(
                 imageVector = Icons.Default.Star,
-                contentDescription = "Save to favorites",
+                contentDescription = "Toggle favorite",
                 tint = MaterialTheme.colorScheme.onPrimary
             )
         }
@@ -861,15 +893,37 @@ fun MediaItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showVideoPlayer by remember { mutableStateOf(false) }
+
     Box(modifier = modifier) {
-        // For videos, we should use a thumbnail generator
         if (isVideo) {
-            VideoThumbnail(
-                videoUrl = mediaUrl,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(8.dp))
-            )
+            if (showVideoPlayer) {
+                // Reproductor de video en pantalla completa
+                VideoPlayer(
+                    videoUri = Uri.parse(mediaUrl),
+                    onDismiss = { showVideoPlayer = false }
+                )
+            } else {
+                // Miniatura del video
+                VideoThumbnail(
+                    videoUrl = mediaUrl,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { showVideoPlayer = true }
+                )
+
+                // Icono de video
+                Icon(
+                    imageVector = Icons.Default.Videocam,
+                    contentDescription = "Video",
+                    tint = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(4.dp)
+                        .size(24.dp)
+                )
+            }
         } else {
             Image(
                 painter = rememberAsyncImagePainter(mediaUrl),
@@ -878,32 +932,66 @@ fun MediaItem(
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(8.dp))
+                    .clickable(onClick = onClick)
             )
         }
-
-        // Add video indicator icon
-        if (isVideo) {
-            Icon(
-                imageVector = Icons.Default.Videocam,
-                contentDescription = "Video",
-                tint = Color.White,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(4.dp)
-                    .size(24.dp)
-            )
-        }
-
-        // Clickable overlay
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(onClick = onClick)
-                .background(Color.Transparent)
-        )
     }
 }
 
+// Añade esta nueva función para el reproductor de video
+@Composable
+fun VideoPlayer(
+    videoUri: Uri,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+
+    // Crea y configura el ExoPlayer
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(videoUri))
+            prepare()
+            playWhenReady = true
+        }
+    }
+
+    // Libera el reproductor cuando el composable se descompone
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer.release()
+        }
+    }
+
+    // Muestra el reproductor en un diálogo
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .clickable { onDismiss() },
+            contentAlignment = Alignment.Center
+        ) {
+            AndroidView(
+                factory = { ctx ->
+                    PlayerView(ctx).apply {
+                        player = exoPlayer
+                        useController = true
+                        setShowBuffering(PlayerView.SHOW_BUFFERING_ALWAYS)
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+            )
+        }
+    }
+}
+
+// Mantén la función VideoThumbnail como está actualmente
 @Composable
 fun VideoThumbnail(videoUrl: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current

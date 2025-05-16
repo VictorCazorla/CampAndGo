@@ -90,7 +90,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.navigation.NavController
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.storage.FirebaseStorage
-import com.tfg.campandgo.ui.theme.MediaThumbnail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await

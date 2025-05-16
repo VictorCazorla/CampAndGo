@@ -89,7 +89,8 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("com.google.firebase:firebase-storage")
 
-    implementation ("com.google.android.exoplayer:exoplayer:2.19.1")
+    implementation ("com.google.android.exoplayer:exoplayer:2.18.0")
+    implementation ("androidx.media3:media3-ui:1.2.0")
 
     // AndroidX y Jetpack Compose
     implementation(libs.androidx.core.ktx)
@@ -112,6 +113,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.compose.material)
     implementation(libs.play.services.games)
+    implementation(libs.androidx.media3.common.ktx)
+    implementation(libs.androidx.media3.exoplayer)
 
     // Testing
     testImplementation(libs.junit)
