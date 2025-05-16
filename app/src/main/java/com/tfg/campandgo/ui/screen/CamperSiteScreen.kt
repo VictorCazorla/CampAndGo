@@ -8,6 +8,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -97,6 +98,11 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.runtime.DisposableEffect
+import androidx.media3.common.util.UnstableApi
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.QuerySnapshot
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -682,7 +688,8 @@ fun CamperSiteScreen(
                                             "rating" to newRating,
                                             "date" to java.util.Date(),
                                             "comment" to newComment,
-                                            "images" to uploadedUrls
+                                            "images" to uploadedUrls,
+                                            "camper_site_id" to site.id  // Añadimos referencia al sitio
                                         )
 
                                         // Saves the CamperSiteReview
@@ -693,8 +700,8 @@ fun CamperSiteScreen(
                                         val siteRef = db.collection("camper_sites").document(site.id)
                                         siteRef.update("reviews", FieldValue.arrayUnion(camperSiteReviewId)).await()
 
-                                        // Updates the CamperSite review count
-                                        siteRef.update("review_count", site.reviewCount + 1).await()
+                                        // Función para actualizar el rating promedio
+                                        updateCamperSiteRating(site.id)
 
                                         // CamperSiteReview displayed before uploading to storage
                                         val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
@@ -938,7 +945,52 @@ fun MediaItem(
     }
 }
 
+fun updateCamperSiteRating(camperSiteId: String) {
+    val db = FirebaseFirestore.getInstance()
+
+    val siteRef = db.collection("camper_sites").document(camperSiteId)
+    val reviewsQuery = db.collection("camper_site_reviews")
+        .whereEqualTo("camper_site_id", camperSiteId)
+
+    Log.d("RatingUpdate", "Iniciando actualización de rating para sitio: $camperSiteId")
+
+    Tasks.whenAllSuccess<Any>(siteRef.get(), reviewsQuery.get())
+        .addOnSuccessListener { results ->
+            try {
+                val siteDocument = results[0] as DocumentSnapshot
+                val querySnapshot = results[1] as QuerySnapshot
+
+                val initialRating = siteDocument.getDouble("rating") ?: 0.0
+                val initialReviewCount = siteDocument.getLong("review_count")?.toInt() ?: 0
+
+                var totalRating = initialRating * initialReviewCount
+                var totalReviews = initialReviewCount
+
+                for (document in querySnapshot) {
+                    val rating = document.getDouble("rating")
+                    if (rating != null) {
+                        totalRating += rating
+                        totalReviews++
+                    }
+                }
+
+                val averageRating = if (totalReviews > 0) totalRating / totalReviews else 0.0
+
+                val updates = hashMapOf<String, Any>(
+                    "rating" to averageRating,
+                    "review_count" to totalReviews
+                )
+
+                siteRef.update(updates)
+                    .addOnSuccessListener {
+                        Log.d("RatingUpdate", "Promedio actualizado correctamente: $averageRating ($totalReviews valoraciones)")
+                    }
+            } catch (e: Exception) { }
+        }
+}
+
 // Añade esta nueva función para el reproductor de video
+@OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(
     videoUri: Uri,

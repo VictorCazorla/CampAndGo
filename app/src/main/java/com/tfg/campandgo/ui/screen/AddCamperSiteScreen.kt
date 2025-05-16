@@ -268,7 +268,7 @@ fun AddCamperSiteScreen(
                                         images = imageUrls,
                                         videos = videoUrls,
                                         rating = rating,
-                                        reviewCount = 0,
+                                        reviewCount = 1,
                                         amenities = amenities,
                                         reviews = emptyList(),
                                         location = GeoPoint(latitude, longitude)
@@ -310,7 +310,7 @@ fun AddCamperSiteScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = "Medios del sitio (imágenes y videos)",
+                text = "Imagenes del sitio",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
