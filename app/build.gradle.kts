@@ -89,6 +89,8 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("com.google.firebase:firebase-storage")
 
+    implementation ("com.google.android.exoplayer:exoplayer:2.19.1")
+
     // AndroidX y Jetpack Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -6,5 +6,5 @@
 
     <string name="open_weather_key">614e200d59c5fb765119f2ed8c1a3964</string>
     <string name="open_weather_unit">metric</string>
-    <string name="open_weather_lang">es</string>
+    <string name="open_weather_lang">en</string>
 </resources>

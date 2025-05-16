@@ -9,6 +9,7 @@ data class CamperSite(
     val description: String,
     val mainImageUrl: String,
     val images: List<String>,
+    val videos: List<String> = emptyList(),
     val rating: Double,
     val reviewCount: Int,
     val amenities: List<String>,
