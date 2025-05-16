@@ -205,7 +205,6 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 reviews = tempReviews
 
                 isEditing = false
-                snackbarHostState.showSnackbar("Perfil actualizado correctamente")
             } catch (e: Exception) {
                 snackbarHostState.showSnackbar("Error al actualizar el perfil: ${e.message}")
             }
@@ -840,7 +839,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
             }
         }
     }
-    // Snackbar para mostrar mensajes
+
     SnackbarHost(
         hostState = snackbarHostState
     )
@@ -991,11 +990,7 @@ suspend fun uploadToFirebase(uri: Uri, folder: String, context: Context): String
     return try {
         val storageRef = FirebaseStorage.getInstance().reference
         val imageRef = storageRef.child("$folder/${UUID.randomUUID()}.jpg")
-
-        // Sube el archivo
         val uploadTask = imageRef.putFile(uri).await()
-
-        // Obtiene la URL de descarga
         val downloadUrl = imageRef.downloadUrl.await()
 
         downloadUrl.toString().also { url ->

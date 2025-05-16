@@ -14,11 +14,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ToggleButtonGrid(
     onFilterSelected: (List<String>) -> Unit,
-    modifier: Modifier = Modifier
 ) {
     val selectedButtons = remember { mutableStateListOf<String>() }
     var expanded by remember { mutableStateOf(false) }
-    val campArray = listOf("campground", "rv_park", "park")
 
     val buttons = listOf(
         "restaurant" to Icons.Default.Restaurant,
@@ -28,7 +26,6 @@ fun ToggleButtonGrid(
         "supermarket" to Icons.Default.LocalGroceryStore,
         "parking" to Icons.Default.LocalParking,
         "laundry" to Icons.Default.LocalLaundryService,
-        "camping" to Icons.Default.Place,
     )
 
     // Solo IconButton para filtros, alineado con los demás
@@ -72,10 +69,8 @@ fun ToggleButtonGrid(
                     },
                     onClick = {
                         if (isSelected) {
-                            if (key == "camping") campArray.forEach { selectedButtons.remove(it) }
                             selectedButtons.remove(key)
                         } else {
-                            if (key == "camping") campArray.forEach { selectedButtons.add(it) }
                             selectedButtons.add(key)
                         }
                         onFilterSelected(selectedButtons.toList())

@@ -63,7 +63,7 @@ fun SearchBarWithSuggestions(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
-                    label = { Text("Buscar ubicación") },
+                    label = { Text("") },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,

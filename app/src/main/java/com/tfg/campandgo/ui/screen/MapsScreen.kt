@@ -258,6 +258,7 @@ fun MapScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
+
                     // Perfil
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         Surface(
@@ -341,7 +342,6 @@ fun MapScreen(
                         ToggleButtonGrid(onFilterSelected = handleFilterSelected)
                     }
                 }
-
             }
         }
     }

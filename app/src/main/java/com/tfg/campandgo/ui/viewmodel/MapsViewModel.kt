@@ -114,17 +114,8 @@ class MapsViewModel : ViewModel() {
                     response.results.firstOrNull()?.geometry?.location?.let {
                         selectedLocation.value = LatLng(it.lat, it.lng)
                     }
-                } else {
-                    Toast.makeText(context, "Error obteniendo coordenadas.", Toast.LENGTH_SHORT)
-                        .show()
                 }
-            } catch (e: Exception) {
-                Toast.makeText(
-                    context,
-                    "Error obteniendo coordenadas: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+            } catch (_: Exception) { }
         }
     }
 
