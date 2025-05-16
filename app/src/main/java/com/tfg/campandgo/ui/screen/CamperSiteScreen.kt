@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,7 +31,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,9 +45,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Slider
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.LaunchedEffect
@@ -57,8 +59,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.DocumentReference
@@ -66,12 +72,16 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FirebaseStorage
 import com.tfg.campandgo.R
 import com.tfg.campandgo.data.api.WeatherRetrofitClient
 import com.tfg.campandgo.data.model.CamperSite
 import com.tfg.campandgo.data.model.CamperSiteReview
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -80,12 +90,12 @@ import java.util.Locale
 @Composable
 fun CamperSiteScreen(
     camperSiteID: String,
-    onBackClick: () -> Unit,
-    onBookClick: () -> Unit
+    navigator: NavController
 ) {
     val scrollState = rememberScrollState()
     val context = LocalContext.current
     val db = Firebase.firestore
+    var expandedImageUrl by remember { mutableStateOf<String?>(null) }
 
     // OpenWeather
     var nameWeather by remember { mutableStateOf<String?>("") }
@@ -98,7 +108,6 @@ fun CamperSiteScreen(
     val openWeatherLang = context.getString(R.string.open_weather_lang)
 
     // Reviews
-    //val storage = Firebase.storage
     val scope = rememberCoroutineScope()
     var newComment by remember { mutableStateOf("") }
     var newRating by remember { mutableDoubleStateOf(0.0) }
@@ -107,6 +116,7 @@ fun CamperSiteScreen(
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
         images = images + uris
     }
+    var isUploading by remember { mutableStateOf(false) }
 
     // CamperSite
     var site by remember { mutableStateOf(
@@ -172,6 +182,32 @@ fun CamperSiteScreen(
         }
     }
 
+    // Allows you to expand the images
+    if (expandedImageUrl != null) {
+        Dialog(
+            onDismissRequest = { expandedImageUrl = null },
+            properties = DialogProperties(dismissOnClickOutside = true, usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { expandedImageUrl = null }, // para cerrar al pulsar fuera
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = rememberAsyncImagePainter(expandedImageUrl),
+                    contentDescription = "Expanded Image",
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .shadow(8.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+    }
+
+    // The design of the page
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -208,7 +244,13 @@ fun CamperSiteScreen(
 
             // Back button
             IconButton(
-                onClick = onBackClick,
+                onClick = {
+                    scope.launch {
+                        withContext(Dispatchers.Main) {
+                            navigator.popBackStack()
+                        }
+                    }
+                },
                 modifier = Modifier
                     .padding(16.dp)
                     .size(48.dp)
@@ -448,7 +490,9 @@ fun CamperSiteScreen(
                                     painter = rememberAsyncImagePainter(imageUrl),
                                     contentDescription = "Site photo",
                                     contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clickable { expandedImageUrl = imageUrl }
                                 )
                             }
                         }
@@ -524,7 +568,7 @@ fun CamperSiteScreen(
                                     ) {
                                         Image(
                                             painter = rememberAsyncImagePainter(uri),
-                                            contentDescription = "Imagen del sitio",
+                                            contentDescription = "Site image",
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier
                                                 .fillMaxSize()
@@ -539,7 +583,7 @@ fun CamperSiteScreen(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Close,
-                                                contentDescription = "Eliminar imagen",
+                                                contentDescription = "Delete image",
                                                 tint = Color.White,
                                                 modifier = Modifier
                                                     .background(
@@ -569,57 +613,110 @@ fun CamperSiteScreen(
                                     .height(48.dp)
                             )
 
+                            // Circular progress when uploading a review
+                            if (isUploading) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+
                             Spacer(modifier = Modifier.height(12.dp))
                             Button(onClick = {
                                 scope.launch {
+                                    isUploading = true
                                     try {
-                                        val uploadedUrls = mutableListOf<String>()
-                                        images.forEach { uri ->
-                                            uploadedUrls.add(uri.toString()) // TODO: Hardcode temporal
-                                            /*val imageRef = storage.reference
-                                                .child("reviews/${System.currentTimeMillis()}.jpg")
+                                        val userEmail = Firebase.auth.currentUser?.email
+                                        var userName = "Anonymous"
 
-                                            val uploadTask = imageRef.putFile(uri)
-                                            uploadTask.await()
-                                            val downloadUrl = imageRef.downloadUrl.await().toString()
-                                            uploadedUrls.add(downloadUrl)*/
+                                        // Gets user name
+                                        if (userEmail != null) {
+                                            val userDoc = db.collection("users").document(userEmail).get().await()
+                                            userName = userDoc.getString("user_name") ?: "Anonymous"
                                         }
 
+                                        // Uploads the images to the storage
+                                        val storageRef = FirebaseStorage.getInstance().reference
+                                        val uploadedUrls = images.map { uri ->
+                                            val imageRef = storageRef.child("reviews/${System.currentTimeMillis()}.jpg")
+                                            imageRef.putFile(uri).await()
+                                            imageRef.downloadUrl.await().toString()
+                                        }
+
+                                        // Creates the CamperSiteReview
                                         val camperSiteReview = hashMapOf(
-                                            "user_name" to (Firebase.auth.currentUser?.displayName ?: "Anonymous"),
+                                            "user_name" to userName,
                                             "rating" to newRating,
                                             "date" to java.util.Date(),
                                             "comment" to newComment,
                                             "images" to uploadedUrls
                                         )
 
-                                        val caperSiteReviewId = db.collection("camper_site_reviews").document()
-                                        caperSiteReviewId.set(camperSiteReview).await()
+                                        // Saves the CamperSiteReview
+                                        val camperSiteReviewId = db.collection("camper_site_reviews").document()
+                                        camperSiteReviewId.set(camperSiteReview).await()
 
-                                        val camperSiteId = db.collection("camper_sites").document(site.id)
-                                        camperSiteId.update("reviews", FieldValue.arrayUnion(caperSiteReviewId)).await()
+                                        // Saves the CamperSiteReview in the CamperSite
+                                        val siteRef = db.collection("camper_sites").document(site.id)
+                                        siteRef.update("reviews", FieldValue.arrayUnion(camperSiteReviewId)).await()
 
-                                        Log.d("Review", "Reseña guardada correctamente")
+                                        // Updates the CamperSite review count
+                                        siteRef.update("review_count", site.reviewCount + 1).await()
+
+                                        // CamperSiteReview displayed before uploading to storage
+                                        val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+                                        val newReview = CamperSiteReview(
+                                            userName = userName,
+                                            rating = newRating,
+                                            comment = newComment,
+                                            date = formatter.format(LocalDate.now()),
+                                            images = uploadedUrls
+                                        )
+
+                                        site = site.copy(
+                                            reviews = site.reviews + listOf(newReview), // adds it to the end
+                                            reviewCount = site.reviewCount + 1
+                                        )
+
+                                        // Updates the User review count
+                                        if (userEmail != null) {
+                                            val userDocRef = db.collection("users").document(userEmail)
+                                            userDocRef.update("reviews", FieldValue.increment(1))
+                                        }
+
+                                        Log.d("Review", "Review saved successfully")
                                         showNewReviewForm = false
                                         newComment = ""
                                         newRating = 0.0
                                         images = listOf()
 
                                     } catch (e: Exception) {
-                                        Log.e("Review", "Error guardando la review", e)
+                                        Log.e("Review", "Error saving review", e)
+                                    } finally {
+                                        isUploading = false
                                     }
                                 }
-                            }) {
-                                Text("Guardar")
+                            },
+                                enabled = !isUploading
+                            ) {
+                                if (isUploading) {
+                                    Text("Saving...")
+                                } else {
+                                    Text("Save")
+                                }
                             }
                         }
                     }
 
-                    val reviewsToShow = if (showAllReviews) site.reviews else site.reviews.take(3)
+                    val reviewsToShow = if (showAllReviews) site.reviews.reversed() else site.reviews.reversed().take(3)
                     reviewsToShow.forEach { review ->
-                        ReviewItem(review = review)
-                        if (review != site.reviews.last()) {
-                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+                        ReviewItem(review = review, onImageClick = { expandedImageUrl = it })
+                        if (review != reviewsToShow.last()) {
+                            Spacer(modifier = Modifier.padding(vertical = 16.dp))
                         }
                     }
 
@@ -636,33 +733,35 @@ fun CamperSiteScreen(
         }
     }
 
-    // Floating action button
+    // Floating favorites button
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
     ) {
         Button(
-            onClick = onBookClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            onClick = { /* Save on favorites */},
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFF5722),
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = CircleShape,
+            contentPadding = PaddingValues(0.dp),
+            modifier = Modifier
+                .size(48.dp)
+                .align(Alignment.TopEnd),
         ) {
-            Text(
-                text = "Book Now",
-                style = MaterialTheme.typography.titleMedium
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = "Save to favorites",
+                tint = MaterialTheme.colorScheme.onPrimary
             )
         }
     }
 }
 
 @Composable
-fun ReviewItem(review: CamperSiteReview) {
+fun ReviewItem(review: CamperSiteReview, onImageClick: (String) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top
@@ -710,7 +809,7 @@ fun ReviewItem(review: CamperSiteReview) {
                 modifier = Modifier.padding(top = 4.dp)
             )
 
-            if (!review.images.isNullOrEmpty()) {
+            if (review.images.isNotEmpty()) {
                 LazyRow(
                     modifier = Modifier.padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -720,6 +819,7 @@ fun ReviewItem(review: CamperSiteReview) {
                             modifier = Modifier
                                 .size(80.dp)
                                 .clip(RoundedCornerShape(4.dp))
+                                .clickable { onImageClick(imageUrl) }
                         ) {
                             Image(
                                 painter = rememberAsyncImagePainter(imageUrl),

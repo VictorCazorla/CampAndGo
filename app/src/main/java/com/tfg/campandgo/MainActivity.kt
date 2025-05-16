@@ -4,7 +4,6 @@ import com.tfg.campandgo.ui.screen.HomeScreen
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -210,8 +209,8 @@ fun NavigatorHub(
 
             CamperSiteScreen(
                 camperSiteID = camperSiteID,
-                onBackClick = { /* Lógica para volver atrás */ },
-                onBookClick = { /* Lógica para reservar */ })
+                navigator = navigator
+            )
         }
         composable(
             route = Routes.ADD_CAMPER_SITE,
