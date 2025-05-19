@@ -81,23 +81,6 @@ fun SearchBarWithSuggestions(
                     singleLine = true
                 )
 
-                // Botón de búsqueda explícita
-                IconButton(
-                    onClick = onSearch,
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = CircleShape
-                        )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Buscar",
-                    )
-                }
-
                 // Botón de centrar mapa
                 IconButton(
                     onClick = onCenterMap,
@@ -127,7 +110,10 @@ fun SearchBarWithSuggestions(
                     items(suggestions) { prediction ->
                         SuggestionItem(
                             prediction = prediction,
-                            onSuggestionSelected = onSuggestionSelected,
+                            onSuggestionSelected = {
+                                onSuggestionSelected(prediction)
+                                onSearch() // Ejecuta la búsqueda después de seleccionar
+                            },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }

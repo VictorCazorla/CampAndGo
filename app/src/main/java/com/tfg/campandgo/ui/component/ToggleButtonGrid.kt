@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ToggleButtonGrid(
     onFilterSelected: (List<String>) -> Unit,
+    onNearbySearchToggle: () -> Unit,
+    isNearbySearchActive: Boolean
 ) {
     val selectedButtons = remember { mutableStateListOf<String>() }
     var expanded by remember { mutableStateOf(false) }
@@ -28,7 +30,6 @@ fun ToggleButtonGrid(
         "laundry" to Icons.Default.LocalLaundryService,
     )
 
-    // Solo IconButton para filtros, alineado con los demás
     Box {
         IconButton(onClick = { expanded = true }) {
             Icon(
@@ -78,6 +79,32 @@ fun ToggleButtonGrid(
                 )
             }
 
+            // Divider
+            Divider()
+
+            // Botón de buscar lugares cercanos
+            DropdownMenuItem(
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FindReplace,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = if (isNearbySearchActive) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(if (isNearbySearchActive) "Ocultar lugares" else "Mostrar lugares")
+                    }
+                },
+                onClick = {
+                    onNearbySearchToggle()
+                    expanded = false
+                }
+            )
+
+            // Botón cerrar
             DropdownMenuItem(
                 text = {
                     Text("Cerrar", color = MaterialTheme.colorScheme.primary)

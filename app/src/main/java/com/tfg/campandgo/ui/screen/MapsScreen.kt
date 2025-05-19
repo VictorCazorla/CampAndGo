@@ -310,36 +310,30 @@ fun MapScreen(
                         }
                     }
 
-                    // Mostrar lugares cercanos
+                    // Filtros
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        Surface(
-                            color = if (showNearbyPlaces) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
-                            shape = CircleShape
-                        ) {
-                            IconButton(onClick = {
+                        ToggleButtonGrid(
+                            onFilterSelected = handleFilterSelected,
+                            onNearbySearchToggle = {
                                 if (termFilterList.isNotEmpty()) {
                                     showNearbyPlaces = !showNearbyPlaces
                                     if (apiKey != null && showNearbyPlaces) {
                                         viewModel.cleanNearbyPlaces()
                                         termFilterList.forEach { filter ->
-                                            viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, filter)
+                                            viewModel.fetchNearbyPlaces(
+                                                viewModel.selectedLocation.value!!,
+                                                apiKey,
+                                                context,
+                                                filter
+                                            )
                                         }
                                     } else {
                                         viewModel.placeDetails.value = null
                                     }
                                 }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.FindReplace,
-                                    contentDescription = if (showNearbyPlaces) "Ocultar lugares" else "Mostrar lugares"
-                                )
-                            }
-                        }
-                    }
-
-                    // Botón de filtros (sombreado no aplicado por estado específico aquí)
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        ToggleButtonGrid(onFilterSelected = handleFilterSelected)
+                            },
+                            isNearbySearchActive = showNearbyPlaces
+                        )
                     }
                 }
             }
