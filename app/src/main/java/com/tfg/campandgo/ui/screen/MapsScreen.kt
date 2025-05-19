@@ -77,7 +77,7 @@ fun MapScreen(
     }
 
     // Bypass
-    navigator.navigate("chat_camper_site/ZFV9wQfSEuhAQUKfHIqD")
+   //navigator.navigate("chat_camper_site/ZFV9wQfSEuhAQUKfHIqD")
 
     val handleFilterSelected: (List<String>) -> Unit = { filters ->
         termFilterList = filters.toMutableList()
@@ -162,8 +162,12 @@ fun MapScreen(
                             title = place.name,
                             snippet = place.vicinity,
                             icon = BitmapDescriptorFactory.defaultMarker(
-                                if (place.placeId == selectedPlaceId) BitmapDescriptorFactory.HUE_GREEN else BitmapDescriptorFactory.HUE_RED
-                            ),
+                                when {
+                                    place.placeId == selectedPlaceId -> BitmapDescriptorFactory.HUE_GREEN
+                                    place.types?.contains("restaurant") == true -> BitmapDescriptorFactory.HUE_RED
+                                    else -> BitmapDescriptorFactory.HUE_ORANGE
+                                }
+                                ),
                             onClick = {
                                 selectedPlaceId = place.placeId
                                 viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey ?: "", context)

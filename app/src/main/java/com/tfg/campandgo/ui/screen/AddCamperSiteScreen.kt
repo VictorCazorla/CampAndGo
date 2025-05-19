@@ -216,7 +216,11 @@ fun AddCamperSiteScreen(
     // Diálogo para añadir amenidades
     var showAmenityDialog by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
-    val amenityOptions = listOf("Wifi", "Agua potable", "Electricidad", "Duchas", "Lavandería", "Baños", "Zona de picnic", "Barbacoa", "Piscina", "Área infantil", "Aparcamiento", "Tienda", "Restaurante", "Recepción 24h", "Alquiler de bicicletas", "Zona para mascotas")
+    val amenityOptions = listOf("Pernocta", "Wifi", "Agua potable", "Electricidad",
+        "Duchas", "Lavandería", "Baños", "Zona de picnic",
+        "Barbacoa", "Piscina", "Área infantil", "Aparcamiento",
+        "Tienda", "Restaurante", "Recepción 24h", "Alquiler de bicicletas",
+        "Zona para mascotas")
     val scope = rememberCoroutineScope()
 
     Scaffold(

@@ -62,9 +62,6 @@ class MapsViewModel : ViewModel() {
                 if (response.status == "OK") {
                     searchSuggestions.clear()
                     searchSuggestions.addAll(response.predictions)
-                } else {
-                    Toast.makeText(context, "No se encontraron sugerencias.", Toast.LENGTH_SHORT)
-                        .show()
                 }
             } catch (e: Exception) {
                 Toast.makeText(
@@ -135,7 +132,6 @@ class MapsViewModel : ViewModel() {
                 val latLng = LatLng(location.latitude, location.longitude)
                 onResult(latLng)
             } else {
-                Toast.makeText(context, "No se encontró la dirección.", Toast.LENGTH_SHORT).show()
                 onResult(null)
             }
         } catch (e: IOException) {

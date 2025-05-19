@@ -302,6 +302,8 @@ fun MessageInputField(
     }
 }
 
+
+
 private suspend fun sendMessage(
     db: FirebaseFirestore,
     camperSiteId: String,
@@ -322,7 +324,7 @@ private suspend fun sendMessage(
                 .await()
 
             if (messagesSnapshot.size() > 30) {
-                val oldMessages = messagesSnapshot.documents.take(20)
+                val oldMessages = messagesSnapshot.documents.take(1)
                 for (doc in oldMessages) {
                     try {
                         doc.reference.delete().await()
