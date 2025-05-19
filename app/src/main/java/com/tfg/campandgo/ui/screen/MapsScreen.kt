@@ -76,6 +76,9 @@ fun MapScreen(
         }
     }
 
+    // Bypass
+    navigator.navigate("chat_camper_site/ZFV9wQfSEuhAQUKfHIqD")
+
     val handleFilterSelected: (List<String>) -> Unit = { filters ->
         termFilterList = filters.toMutableList()
         if (termFilterList.isEmpty()) {
