@@ -4,6 +4,7 @@ import com.tfg.campandgo.ui.screen.HomeScreen
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
@@ -22,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavType
@@ -40,6 +42,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.tfg.campandgo.ui.navigation.Routes
 import com.tfg.campandgo.ui.screen.AddCamperSiteScreen
@@ -50,6 +53,7 @@ import com.tfg.campandgo.ui.screen.RegisterScreen
 import com.tfg.campandgo.ui.screen.StartScreen
 import com.tfg.campandgo.ui.screen.UserProfileScreen
 import com.tfg.campandgo.ui.theme.CampAndGoTheme
+import kotlinx.coroutines.tasks.await
 
 /**
  * Actividad principal de la aplicación CampAndGo.
@@ -231,8 +235,38 @@ fun NavigatorHub(
             )
         ) { backStackEntry ->
             val camperSiteID = backStackEntry.arguments?.getString("camperSiteID") ?: ""
-            //ChatScreen(camperSiteId = camperSiteID, userName = "", navigator = navigator)
-            ChatScreen(camperSiteId = camperSiteID, userName = Firebase.auth.currentUser?.email.toString(), navigator = navigator)
+            val userEmail = Firebase.auth.currentUser?.email ?: ""
+            val context = LocalContext.current
+
+            var userName by remember { mutableStateOf<String?>(null) }
+            var isLoading by remember { mutableStateOf(true) }
+
+            LaunchedEffect(userEmail) {
+                try {
+                    val snapshot = FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(userEmail)
+                        .get()
+                        .await()
+
+                    userName = snapshot.getString("user_name")
+                    isLoading = false
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Could not load username", Toast.LENGTH_SHORT).show()
+                    navigator.popBackStack()
+                }
+            }
+
+            if (!isLoading && userName != null) {
+                ChatScreen(
+                    camperSiteId = camperSiteID,
+                    userName = userName!!,
+                    navigator = navigator
+                )
+            } else if (!isLoading) {
+                Toast.makeText(context, "User not found", Toast.LENGTH_SHORT).show()
+                navigator.popBackStack()
+            }
         }
     }
 }
