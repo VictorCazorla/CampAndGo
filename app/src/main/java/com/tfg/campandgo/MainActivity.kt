@@ -44,6 +44,7 @@ import com.google.firebase.ktx.Firebase
 import com.tfg.campandgo.ui.navigation.Routes
 import com.tfg.campandgo.ui.screen.AddCamperSiteScreen
 import com.tfg.campandgo.ui.screen.CamperSiteScreen
+import com.tfg.campandgo.ui.screen.ChatScreen
 import com.tfg.campandgo.ui.screen.LoginScreen
 import com.tfg.campandgo.ui.screen.RegisterScreen
 import com.tfg.campandgo.ui.screen.StartScreen
@@ -222,6 +223,16 @@ fun NavigatorHub(
             val latitude = backStackEntry.arguments?.getFloat("latitude")?.toDouble() ?: 0.0
             val longitude = backStackEntry.arguments?.getFloat("longitude")?.toDouble() ?: 0.0
             AddCamperSiteScreen(latitude = latitude, longitude = longitude, navigator = navigator)
+        }
+        composable(
+            route = Routes.CHAT_CAMPER_SITE,
+            arguments = listOf(
+                navArgument("camperSiteID") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val camperSiteID = backStackEntry.arguments?.getString("camperSiteID") ?: ""
+            //ChatScreen(camperSiteId = camperSiteID, userName = "", navigator = navigator)
+            ChatScreen(camperSiteId = camperSiteID, userName = Firebase.auth.currentUser?.email.toString(), navigator = navigator)
         }
     }
 }
