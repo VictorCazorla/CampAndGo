@@ -1,6 +1,7 @@
 package com.tfg.campandgo.ui.screen
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -37,6 +38,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -309,6 +311,26 @@ private suspend fun sendMessage(
     onComplete: () -> Unit
 ) {
     try {
+        val messagesRef = db.collection("chats")
+            .document(camperSiteId)
+            .collection("messages")
+
+        try {
+            val messagesSnapshot = messagesRef
+                .orderBy("timestamp")
+                .get()
+                .await()
+
+            if (messagesSnapshot.size() > 30) {
+                val oldMessages = messagesSnapshot.documents.take(20)
+                for (doc in oldMessages) {
+                    try {
+                        doc.reference.delete().await()
+                    } catch (_: Exception) { }
+                }
+            }
+        } catch (_: Exception) { }
+
         val messageMap = mutableMapOf(
             "senderName" to (userName ?: "Anónimo"),
             "timestamp" to Timestamp.now()
@@ -318,23 +340,30 @@ private suspend fun sendMessage(
             messageMap["text"] = messageText
         }
 
-        if (imageUri != null) {
-            val imageUrl = uploadImageAndGetUrl(imageUri)
-            messageMap["imageUrl"] = imageUrl
+        imageUri?.let { uri ->
+            try {
+                val imageUrl = uploadImageAndGetUrl(uri)
+                messageMap["imageUrl"] = imageUrl
+            } catch (_: Exception) {
+                if (messageText.isBlank()) {
+                    throw Exception("Failed to upload image and no text provided")
+                }
+            }
         }
 
-        db.collection("chats")
-            .document(camperSiteId)
-            .collection("messages")
-            .add(messageMap)
-            .await()
+        try {
+            messagesRef.add(messageMap).await()
+            onComplete()
+        } catch (e: Exception) {
+            throw e
+        }
 
-        onComplete()
     } catch (e: Exception) {
-        // Handle error appropriately
-        e.printStackTrace()
+        if (e is CancellationException) throw e
+        throw e
     }
 }
+
 
 private suspend fun uploadImageAndGetUrl(uri: Uri): String {
     return withContext(Dispatchers.IO) {
