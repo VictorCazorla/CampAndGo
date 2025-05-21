@@ -9,7 +9,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.tfg.campandgo.R
 
 @Composable
 fun ToggleButtonGrid(
@@ -31,11 +33,18 @@ fun ToggleButtonGrid(
     )
 
     Box {
-        IconButton(onClick = { expanded = true }) {
+        IconButton(
+            onClick = { expanded = true },
+        ) {
             Icon(
-                imageVector = Icons.Default.FilterList,
-                contentDescription = "Filtrar",
-                modifier = Modifier.size(28.dp)
+                painter = painterResource(id = R.drawable.find_icon),
+                contentDescription = "Filtrar lugares de interés",
+                modifier = Modifier.size(28.dp),
+                tint = if (selectedButtons.isNotEmpty() || isNearbySearchActive) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                }
             )
         }
 
@@ -62,10 +71,16 @@ fun ToggleButtonGrid(
                             Icon(
                                 imageVector = icon,
                                 contentDescription = null,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(24.dp),
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.width(16.dp))
-                            Text(key.replace("_", " ").replaceFirstChar { it.uppercase() })
+                            Text(
+                                text = key.replace("_", " ").replaceFirstChar { it.uppercase() },
+                                color = if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
                         }
                     },
                     onClick = {
@@ -79,23 +94,28 @@ fun ToggleButtonGrid(
                 )
             }
 
-            // Divider
             Divider()
 
-            // Botón de buscar lugares cercanos
             DropdownMenuItem(
                 text = {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(
-                            imageVector = Icons.Default.FindReplace,
+                            imageVector = Icons.Default.Search,
                             contentDescription = null,
                             modifier = Modifier.size(24.dp),
-                            tint = if (isNearbySearchActive) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                            tint = if (isNearbySearchActive) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(if (isNearbySearchActive) "Ocultar lugares" else "Mostrar lugares")
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            text = if (isNearbySearchActive) "Hide Campersites" else "Show Campersites",
+                            color = if (isNearbySearchActive) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
                 onClick = {
@@ -104,14 +124,14 @@ fun ToggleButtonGrid(
                 }
             )
 
-            // Botón cerrar
+            Divider()
+
             DropdownMenuItem(
                 text = {
-                    Text("Cerrar", color = MaterialTheme.colorScheme.primary)
+                    Text("Close", color = MaterialTheme.colorScheme.primary)
                 },
                 onClick = { expanded = false }
             )
         }
     }
 }
-

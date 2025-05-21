@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -317,40 +318,10 @@ fun MapScreen(
                             IconButton(onClick = {
                                 navigator.navigate("user_profile/${user?.email}")
                             }) {
-                                Icon(imageVector = Icons.Default.Person, contentDescription = "Profile")
-                            }
-                        }
-                    }
-
-                    // Show Firebase camper sites
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        Surface(
-                            color = if (showFirebasePlaces) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
-                            shape = CircleShape
-                        ) {
-                            IconButton(onClick = {
-                                showFirebasePlaces = !showFirebasePlaces
-                                if (showFirebasePlaces) {
-                                    val center = viewModel.selectedLocation.value ?: currentLocation ?: return@IconButton
-                                    viewModel.fetchCamperSitesFromFirestore(
-                                        center = center,
-                                        radius = 10.0,
-                                        context = context,
-                                        onSuccess = {
-                                            Toast.makeText(
-                                                context,
-                                                "${viewModel.firebaseCamperSites.size} sites available",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    )
-                                } else {
-                                    viewModel.clearFirebaseCamperSites()
-                                }
-                            }) {
                                 Icon(
-                                    imageVector = Icons.Default.Festival,
-                                    contentDescription = if (showFirebasePlaces) "Hide campsites" else "Show campsites"
+                                    painter = painterResource(id = R.drawable.profile_icon),
+                                    contentDescription = "Access user profile",
+                                    modifier = Modifier.size(28.dp),
                                 )
                             }
                         }
@@ -382,13 +353,27 @@ fun MapScreen(
                         )
                     }
 
-                    // Camper site filter by amenities
+                    // Camper site filter by amenities and visibility toggle
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         CamperSiteAmenityFilterButton(
                             selectedAmenities = viewModel.selectedAmenities,
                             onAmenityToggle = { amenity ->
                                 viewModel.toggleAmenityFilter(amenity)
-                            }
+                            },
+                            onToggleFirebaseSearch = {
+                                showFirebasePlaces = !showFirebasePlaces
+                                if (showFirebasePlaces) {
+                                    val center = viewModel.selectedLocation.value ?: currentLocation ?: return@CamperSiteAmenityFilterButton
+                                    viewModel.fetchCamperSitesFromFirestore(
+                                        center = center,
+                                        radius = 10.0,
+                                        context = context
+                                    )
+                                } else {
+                                    viewModel.clearFirebaseCamperSites()
+                                }
+                            },
+                            showFirebasePlaces = showFirebasePlaces
                         )
                     }
                 }
