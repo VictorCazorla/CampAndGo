@@ -10,7 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.FirebaseFirestore
-import com.tfg.campandgo.data.api.RetrofitClient
+import com.tfg.campandgo.data.api.GoogleRetrofitClient
 import com.tfg.campandgo.data.model.CamperSite
 import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.PlaceDetails
@@ -55,7 +55,7 @@ class MapsViewModel : ViewModel() {
     fun searchLocations(query: String, apiKey: String, context: Context) {
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.placesService.autocomplete(
+                val response = GoogleRetrofitClient.placesService.autocomplete(
                     input = query,
                     key = apiKey
                 )
@@ -103,7 +103,7 @@ class MapsViewModel : ViewModel() {
     fun getLocationDetails(placeId: String, apiKey: String, context: Context) {
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.placesService.geocode(
+                val response = GoogleRetrofitClient.placesService.geocode(
                     address = placeId,
                     key = apiKey
                 )
@@ -159,7 +159,7 @@ class MapsViewModel : ViewModel() {
                 if (placeId.isNotEmpty()) {
                     Log.e("MapsViewModel", "placeId: $placeId - apiKey: $apiKey")
 
-                    val response = RetrofitClient.placesService.getPlaceDetails(placeId, apiKey)
+                    val response = GoogleRetrofitClient.placesService.getPlaceDetails(placeId, apiKey)
                     if (response.status == "OK") {
                         placeDetails.value = response.result
                     } else {
@@ -201,7 +201,7 @@ class MapsViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             try {
-                val response = RetrofitClient.placesService.nearbySearch(
+                val response = GoogleRetrofitClient.placesService.nearbySearch(
                     location = "${location.latitude},${location.longitude}",
                     radius = 1000,
                     type = type,

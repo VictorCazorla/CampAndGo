@@ -1,4 +1,4 @@
-package com.tfg.campandgo.data.api
+package com.tfg.campandgo.data.api.service
 
 import com.tfg.campandgo.data.model.AutocompleteResponse
 import com.tfg.campandgo.data.model.GeocodeResponse

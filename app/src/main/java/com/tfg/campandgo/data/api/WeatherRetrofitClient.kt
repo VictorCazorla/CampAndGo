@@ -1,5 +1,7 @@
 package com.tfg.campandgo.data.api
 
+import com.tfg.campandgo.data.api.service.WeatherService
+
 /**
  * Servicio de la API de OpenWeather.
  * Se inicializa de forma perezosa usando la instancia única de RetrofitFactory.

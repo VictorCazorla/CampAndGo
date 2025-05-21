@@ -1,7 +1,6 @@
 package com.tfg.campandgo.ui.screen
 
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -22,20 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.firebase.Timestamp
-import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
-import com.tfg.campandgo.R
 import com.tfg.campandgo.data.model.ChatMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -63,6 +57,8 @@ fun ChatScreen(camperSiteId: String, userName: String?, navigator: NavController
         onResult = { uri -> uri?.let { imageUri = it } }
     )
 
+    var siteName by remember { mutableStateOf("") }
+
     // Load messages
     LaunchedEffect(camperSiteId) {
         db.collection("chats")
@@ -80,6 +76,12 @@ fun ChatScreen(camperSiteId: String, userName: String?, navigator: NavController
                     }
                 }
             }
+        db.collection("camper_sites")
+            .document(camperSiteId)
+            .get()
+            .addOnSuccessListener { document ->
+                 siteName = document.getString("name")!!
+            }
     }
 
     Scaffold(
@@ -87,7 +89,7 @@ fun ChatScreen(camperSiteId: String, userName: String?, navigator: NavController
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Chat del camping",
+                        "$siteName's Chat",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
                     )
                 },

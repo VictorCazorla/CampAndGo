@@ -1,10 +1,12 @@
 package com.tfg.campandgo.data.api
 
+import com.tfg.campandgo.data.api.service.GooglePlacesService
+
 /**
  * Servicio de la API de Google Places.
  * Se inicializa de forma perezosa usando la instancia única de RetrofitFactory.
  */
-object RetrofitClient {
+object GoogleRetrofitClient {
 
     private const val BASE_URL = "https://maps.googleapis.com/"
 

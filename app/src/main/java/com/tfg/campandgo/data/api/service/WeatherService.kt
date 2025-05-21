@@ -1,4 +1,4 @@
-package com.tfg.campandgo.data.api
+package com.tfg.campandgo.data.api.service
 
 import com.tfg.campandgo.data.model.WeatherResponse
 import retrofit2.http.GET

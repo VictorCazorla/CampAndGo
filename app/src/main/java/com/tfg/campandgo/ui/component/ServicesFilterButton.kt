@@ -112,7 +112,7 @@ fun ToggleButtonGrid(
                         )
                         Spacer(Modifier.width(16.dp))
                         Text(
-                            text = if (isNearbySearchActive) "Hide Campersites" else "Show Campersites",
+                            text = if (isNearbySearchActive) "Hide places" else "Show places",
                             color = if (isNearbySearchActive) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurface
                         )

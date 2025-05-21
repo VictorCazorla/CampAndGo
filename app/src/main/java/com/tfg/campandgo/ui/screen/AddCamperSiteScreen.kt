@@ -82,6 +82,7 @@ import com.tfg.campandgo.data.model.CamperSite
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.rememberCoroutineScope
@@ -298,7 +299,7 @@ fun AddCamperSiteScreen(
                 modifier = Modifier.padding(16.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Default.Star,
+                    imageVector = Icons.Default.Save,
                     contentDescription = "Guardar",
                     tint = MaterialTheme.colorScheme.onPrimary
                 )

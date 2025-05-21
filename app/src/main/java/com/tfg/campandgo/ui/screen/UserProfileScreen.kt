@@ -207,6 +207,27 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         }
     }
 
+    // Función para eliminar favoritos (nueva)
+    suspend fun removeFromFavorites(email: String, siteId: String) {
+        try {
+            val db = FirebaseFirestore.getInstance()
+            val userRef = db.collection("users").document(email)
+
+            db.runTransaction { transaction ->
+                val userDoc = transaction.get(userRef)
+                val currentFavorites = userDoc.get("favorite_camper_sites") as? List<DocumentReference> ?: emptyList()
+
+                val siteRef = db.collection("camper_sites").document(siteId)
+                val updatedFavorites = currentFavorites.filter { it.id != siteId }
+
+                transaction.update(userRef, "favorite_camper_sites", updatedFavorites)
+            }.await()
+        } catch (e: Exception) {
+            Log.e("FavoriteSites", "Error removing favorite", e)
+            throw e // Puedes manejar esto mostrando un Snackbar al usuario
+        }
+    }
+
     fun saveChanges() {
         scope.launch {
             try {
@@ -869,31 +890,71 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 8.dp)
-                                            .clickable {
-                                                navigator.navigate("camper_site/${site.id}")
-                                            },
+                                            .padding(vertical = 8.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Text(
-                                            text = site.name,
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.Star,
-                                                contentDescription = "Rating",
-                                                tint = Color(0xFFFFC107),
-                                                modifier = Modifier.size(16.dp)
-                                            )
+                                        // Contenido clickable
+                                        Row(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable {
+                                                    navigator.navigate("camper_site/${site.id}")
+                                                },
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
                                             Text(
-                                                text = String.format("%.1f", site.rating),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                modifier = Modifier.padding(start = 4.dp)
+                                                text = site.name,
+                                                style = MaterialTheme.typography.bodyMedium
                                             )
                                         }
+
+                                        // Rating y botón de eliminar
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.End
+                                        ) {
+                                            // Rating
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.padding(end = 16.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Star,
+                                                    contentDescription = "Rating",
+                                                    tint = Color(0xFFFFC107),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Text(
+                                                    text = String.format("%.1f", site.rating),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    modifier = Modifier.padding(start = 4.dp)
+                                                )
+                                            }
+
+                                            // Botón de eliminar
+                                            IconButton(
+                                                onClick = {
+                                                    scope.launch {
+                                                        removeFromFavorites(email, site.id)
+                                                        favoriteSites.removeAll { it.id == site.id }
+                                                    }
+                                                },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = "Remove from favorites",
+                                                    tint = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
                                     }
+                                    Divider(
+                                        modifier = Modifier.padding(vertical = 4.dp),
+                                        color = Color.LightGray.copy(alpha = 0.3f),
+                                        thickness = 1.dp
+                                    )
                                 }
                             }
                         }

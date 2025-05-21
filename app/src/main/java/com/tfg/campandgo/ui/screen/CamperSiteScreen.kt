@@ -53,6 +53,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.CircularProgressIndicator
@@ -150,6 +151,20 @@ fun CamperSiteScreen(
             location = GeoPoint(0.0, 0.0)
         )
     ) }
+
+    // Estado para controlar si es favorito
+    var isFavorite by remember { mutableStateOf(false) }
+
+    // Comprobar si es favorito al cargar
+    LaunchedEffect(userEmail, site.id) {
+        if (userEmail != null) {
+            val userRef = db.collection("users").document(userEmail)
+            val snapshot = userRef.get().await()
+            val favorites = snapshot.get("favorite_camper_sites") as? List<DocumentReference> ?: emptyList()
+            isFavorite = favorites.any { it.id == site.id }
+        }
+    }
+
     var siteReviews by remember { mutableStateOf<List<CamperSiteReview>>(emptyList()) }
 
     LaunchedEffect(Unit) {
@@ -796,17 +811,17 @@ fun CamperSiteScreen(
                             val userRef = db.collection("users").document(userEmail)
                             val camperSiteRef = db.document("/camper_sites/${site.id}")
 
-                            // Get current favorites
-                            val snapshot = userRef.get().await()
-                            val favorites = snapshot.get("favorite_camper_sites") as? List<DocumentReference> ?: emptyList()
-
-                            if (favorites.any { it.id == site.id }) {
+                            if (isFavorite) {
+                                // Eliminar de favoritos
                                 userRef.update("favorite_camper_sites", FieldValue.arrayRemove(camperSiteRef)).await()
                                 Toast.makeText(context, "Site removed from favorites.", Toast.LENGTH_SHORT).show()
                             } else {
+                                // Añadir a favoritos
                                 userRef.update("favorite_camper_sites", FieldValue.arrayUnion(camperSiteRef)).await()
                                 Toast.makeText(context, "Site successfully added to favorites.", Toast.LENGTH_SHORT).show()
                             }
+                            // Cambiar estado visual
+                            isFavorite = !isFavorite
                         }
                     } catch (e: Exception) {
                         Log.e("Favorites", "Error switching favorites", e)
@@ -814,7 +829,8 @@ fun CamperSiteScreen(
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = if (isFavorite) MaterialTheme.colorScheme.secondary
+                else MaterialTheme.colorScheme.primary,
                 contentColor = Color.White
             ),
             shape = CircleShape,
@@ -824,8 +840,10 @@ fun CamperSiteScreen(
                 .align(Alignment.TopEnd),
         ) {
             Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = "Toggle favorite",
+                imageVector = if (isFavorite) Icons.Default.Check
+                else Icons.Default.Star,
+                contentDescription = if (isFavorite) "Remove from favorites"
+                else "Add to favorites",
                 tint = MaterialTheme.colorScheme.onPrimary
             )
         }
