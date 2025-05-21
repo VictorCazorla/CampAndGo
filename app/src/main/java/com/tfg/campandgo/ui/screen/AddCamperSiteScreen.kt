@@ -274,7 +274,6 @@ fun AddCamperSiteScreen(
                                         rating = rating,
                                         reviewCount = 1,
                                         amenities = amenities,
-                                        reviews = emptyList(),
                                         location = GeoPoint(latitude, longitude)
                                     )
 

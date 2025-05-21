@@ -115,6 +115,7 @@ dependencies {
     implementation(libs.play.services.games)
     implementation(libs.androidx.media3.common.ktx)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.ui.test.android)
 
     // Testing
     testImplementation(libs.junit)

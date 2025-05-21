@@ -42,6 +42,7 @@ class MapsViewModel : ViewModel() {
     var placeDetails = mutableStateOf<PlaceDetails?>(null)
     var nearbyPlaces = mutableStateListOf<Place>()
     var firebaseCamperSites = mutableStateListOf<CamperSite>()
+    var selectedAmenities = mutableStateOf(setOf<String>())
     private val firestore = FirebaseFirestore.getInstance()
 
     /**
@@ -259,7 +260,6 @@ class MapsViewModel : ViewModel() {
                                     rating = doc.getDouble("rating") ?: 0.0,
                                     reviewCount = doc.getLong("reviewCount")?.toInt() ?: 0,
                                     amenities = doc.get("amenities") as? List<String> ?: emptyList(),
-                                    reviews = emptyList(),
                                     location = geoPoint
                                 )
                             } else {
@@ -316,4 +316,14 @@ class MapsViewModel : ViewModel() {
             firebaseCamperSites.clear()
         }
     }
+
+
+    fun toggleAmenityFilter(amenity: String) {
+        selectedAmenities.value = if (selectedAmenities.value.contains(amenity)) {
+            selectedAmenities.value - amenity
+        } else {
+            selectedAmenities.value + amenity
+        }
+    }
+
 }

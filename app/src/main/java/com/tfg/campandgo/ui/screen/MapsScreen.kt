@@ -1,5 +1,6 @@
 package com.tfg.campandgo.ui.screen
 
+import CamperSiteAmenityFilterButton
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
@@ -15,22 +16,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddLocation
 import androidx.compose.material.icons.filled.Festival
-import androidx.compose.material.icons.filled.FindReplace
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.ktx.auth
@@ -76,9 +73,6 @@ fun MapScreen(
         }
     }
 
-    // Bypass
-   //navigator.navigate("chat_camper_site/ZFV9wQfSEuhAQUKfHIqD")
-
     val handleFilterSelected: (List<String>) -> Unit = { filters ->
         termFilterList = filters.toMutableList()
         if (termFilterList.isEmpty()) {
@@ -116,6 +110,33 @@ fun MapScreen(
         }
     }
 
+    val amenityFilters = listOf(
+        "Overnight stay", "WiFi", "Drinking water", "Electricity",
+        "Showers", "Laundry", "Restrooms", "Picnic area",
+        "Barbecue", "Swimming pool", "Playground", "Parking",
+        "Store", "Restaurant", "24h reception", "Bike rental",
+        "Pet area"
+    )
+
+    var selectedAmenities by remember { mutableStateOf(setOf<String>()) }
+
+    Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+        amenityFilters.forEach { amenity ->
+            FilterChip(
+                selected = selectedAmenities.contains(amenity),
+                onClick = {
+                    selectedAmenities = if (selectedAmenities.contains(amenity)) {
+                        selectedAmenities - amenity
+                    } else {
+                        selectedAmenities + amenity
+                    }
+                },
+                label = { Text(amenity.capitalize()) },
+                modifier = Modifier.padding(4.dp)
+            )
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
@@ -142,7 +163,7 @@ fun MapScreen(
             viewModel.selectedLocation.value?.let { location ->
                 Marker(
                     state = MarkerState(position = location),
-                    title = "Ubicación seleccionada",
+                    title = "Selected location",
                     snippet = "Lat: ${"%.4f".format(location.latitude)}, Lng: ${"%.4f".format(location.longitude)}",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
                     onClick = {
@@ -154,20 +175,48 @@ fun MapScreen(
                 )
             }
 
+            val filteredCamperSites = if (viewModel.selectedAmenities.value.isEmpty()) {
+                firebaseCamperSites
+            } else {
+                firebaseCamperSites.filter { site ->
+                    viewModel.selectedAmenities.value.all { it in site.amenities }
+                }
+            }
+
             if (showNearbyPlaces) {
                 nearbyPlaces.forEach { place ->
                     place.geometry?.location?.let { location ->
+                        val icon: BitmapDescriptor = when {
+                            place.placeId == selectedPlaceId -> BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+                            place.types?.contains("restaurant") == true -> BitmapDescriptorFactory.fromBitmap(
+                                Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.resources, R.drawable.res_icon), 100, 100, false)
+                            )
+                            place.types?.contains("lodging") == true -> BitmapDescriptorFactory.fromBitmap(
+                                Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.resources, R.drawable.hotel_icon), 100, 100, false)
+                            )
+                            place.types?.contains("car_repair") == true -> BitmapDescriptorFactory.fromBitmap(
+                                Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.resources, R.drawable.mec_icon), 100, 100, false)
+                            )
+                            place.types?.contains("gas_station") == true -> BitmapDescriptorFactory.fromBitmap(
+                                Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.resources, R.drawable.gas_icon), 100, 100, false)
+                            )
+                            place.types?.contains("supermarket") == true -> BitmapDescriptorFactory.fromBitmap(
+                                Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.resources, R.drawable.super_icon), 100, 100, false)
+                            )
+                            place.types?.contains("parking") == true -> BitmapDescriptorFactory.fromBitmap(
+                                Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.resources, R.drawable.parking_icon), 100, 100, false)
+                            )
+                            place.types?.contains("laundry") == true -> BitmapDescriptorFactory.fromBitmap(
+                                Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.resources, R.drawable.laundry_icon), 100, 100, false)
+                            )
+                            else -> BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+                        }
+
                         Marker(
                             state = MarkerState(position = LatLng(location.lat, location.lng)),
                             title = place.name,
                             snippet = place.vicinity,
-                            icon = BitmapDescriptorFactory.defaultMarker(
-                                when {
-                                    place.placeId == selectedPlaceId -> BitmapDescriptorFactory.HUE_GREEN
-                                    place.types?.contains("restaurant") == true -> BitmapDescriptorFactory.HUE_RED
-                                    else -> BitmapDescriptorFactory.HUE_ORANGE
-                                }
-                                ),
+                            icon = icon,
                             onClick = {
                                 selectedPlaceId = place.placeId
                                 viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey ?: "", context)
@@ -179,16 +228,13 @@ fun MapScreen(
             }
 
             if (showFirebasePlaces) {
-                firebaseCamperSites.forEach { site ->
+                filteredCamperSites.forEach { site ->
                     Marker(
                         state = MarkerState(position = LatLng(site.location.latitude, site.location.longitude)),
                         title = site.name,
                         snippet = "Rating: ${site.rating} (${site.reviewCount} reviews)",
                         icon = BitmapDescriptorFactory.fromBitmap(
-                            Bitmap.createScaledBitmap(
-                                BitmapFactory.decodeResource(context.resources, R.drawable.camp_marker),
-                                120, 120, false
-                            )
+                            Bitmap.createScaledBitmap(BitmapFactory.decodeResource(context.resources, R.drawable.camp_marker), 120, 120, false)
                         ),
                         onClick = {
                             navigator.navigate("camper_site/${site.id}")
@@ -265,25 +311,18 @@ fun MapScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-
-                    // Perfil
+                    // Profile
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        Surface(
-                            color = Color.Transparent,
-                            shape = CircleShape
-                        ) {
+                        Surface(color = Color.Transparent, shape = CircleShape) {
                             IconButton(onClick = {
                                 navigator.navigate("user_profile/${user?.email}")
                             }) {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = "Perfil"
-                                )
+                                Icon(imageVector = Icons.Default.Person, contentDescription = "Profile")
                             }
                         }
                     }
 
-                    // Mostrar campings de Firebase
+                    // Show Firebase camper sites
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         Surface(
                             color = if (showFirebasePlaces) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
@@ -300,7 +339,7 @@ fun MapScreen(
                                         onSuccess = {
                                             Toast.makeText(
                                                 context,
-                                                "${viewModel.firebaseCamperSites.size} sitios disponibles",
+                                                "${viewModel.firebaseCamperSites.size} sites available",
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -311,13 +350,13 @@ fun MapScreen(
                             }) {
                                 Icon(
                                     imageVector = Icons.Default.Festival,
-                                    contentDescription = if (showFirebasePlaces) "Ocultar campings" else "Mostrar campings"
+                                    contentDescription = if (showFirebasePlaces) "Hide campsites" else "Show campsites"
                                 )
                             }
                         }
                     }
 
-                    // Filtros
+                    // Filter nearby places (Google)
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         ToggleButtonGrid(
                             onFilterSelected = handleFilterSelected,
@@ -340,6 +379,16 @@ fun MapScreen(
                                 }
                             },
                             isNearbySearchActive = showNearbyPlaces
+                        )
+                    }
+
+                    // Camper site filter by amenities
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        CamperSiteAmenityFilterButton(
+                            selectedAmenities = viewModel.selectedAmenities,
+                            onAmenityToggle = { amenity ->
+                                viewModel.toggleAmenityFilter(amenity)
+                            }
                         )
                     }
                 }

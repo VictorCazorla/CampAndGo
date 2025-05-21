@@ -56,7 +56,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -99,10 +98,7 @@ import androidx.media3.ui.PlayerView
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.runtime.DisposableEffect
 import androidx.media3.common.util.UnstableApi
-import com.google.android.gms.tasks.Tasks
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.QuerySnapshot
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -111,7 +107,6 @@ fun CamperSiteScreen(
     navigator: NavController
 ) {
     val scrollState = rememberScrollState()
-    val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     val db = Firebase.firestore
     val userEmail = Firebase.auth.currentUser?.email
@@ -151,64 +146,62 @@ fun CamperSiteScreen(
             rating = 0.0,
             reviewCount = 0,
             amenities = listOf(),
-            location = GeoPoint(0.0, 0.0),
-            reviews = listOf()
+            location = GeoPoint(0.0, 0.0)
         )
     ) }
+    var siteReviews by remember { mutableStateOf<List<CamperSiteReview>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         try {
             val camperSitesSnapshot = db.collection("camper_sites")
                 .whereEqualTo("id", camperSiteID)
                 .get()
-                .await()  // Wait for response synchronously
+                .await()
 
             if (camperSitesSnapshot.isEmpty) {
                 Log.d("LaunchCampsite", "No camper site found")
             } else {
-                val camperSite = camperSitesSnapshot.documents.first()
-                site = CamperSite(
-                    id = camperSite.getString("id") ?: "",
-                    name = camperSite.getString("name") ?: "",
-                    formattedAddress = camperSite.getString("formatted_address") ?: "",
-                    description = camperSite.getString("description") ?: "",
-                    mainImageUrl = camperSite.getString("main_image_url") ?: "",
-                    videos = camperSite.get("videos") as? List<String> ?: listOf(),
-                    images = camperSite.get("images") as? List<String> ?: listOf(),
-                    rating = camperSite.getDouble("rating") ?: 0.0,
-                    reviewCount = camperSite.getLong("review_count")?.toInt() ?: 0,
-                    amenities = camperSite.get("amenities") as? List<String> ?: listOf(),
-                    reviews = (camperSite.get("reviews") as? List<DocumentReference>)?.map {
-                        val reviewDoc = it.get().await()
+                val camperSiteDoc = camperSitesSnapshot.documents.first()
 
-                        val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
-                        CamperSiteReview(
-                            userName = reviewDoc.getString("user_name") ?: "",
-                            rating = reviewDoc.getDouble("rating") ?: 0.0,
-                            comment = reviewDoc.getString("comment") ?: "",
-                            date = reviewDoc.getDate("date")?.toInstant()?.atZone(ZoneId.systemDefault())
-                                ?.toLocalDate()?.format(formatter)
-                                ?: "",
-                            images = reviewDoc.get("images") as? List<String> ?: listOf()
-                        )
-                    } ?: listOf(),
-                    location = camperSite.getGeoPoint("location")!!
+                val basicSite = camperSiteDoc.toObject(CamperSite::class.java)!!.copy(
+                    id = camperSiteDoc.getString("id") ?: ""
                 )
+
+                // Load the reviews of the sub collection
+                val reviewSnapshots = camperSiteDoc.reference
+                    .collection("camper_site_reviews")
+                    .get()
+                    .await()
+
+                val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+                val loadedReviews = reviewSnapshots.documents.map { doc ->
+                    CamperSiteReview(
+                        userName = doc.getString("user_name") ?: "",
+                        rating = doc.getDouble("rating") ?: 0.0,
+                        comment = doc.getString("comment") ?: "",
+                        date = doc.getDate("date")?.toInstant()?.atZone(ZoneId.systemDefault())
+                            ?.toLocalDate()?.format(formatter) ?: "",
+                        images = doc.get("images") as? List<String> ?: listOf()
+                    )
+                }
+
+                site = basicSite
+                siteReviews = loadedReviews
+
+                // Weather info
+                val response = WeatherRetrofitClient.weatherService.getCurrentWeather(
+                    lat = site.location.latitude,
+                    lon = site.location.longitude,
+                    apiKey = openWeatherKey,
+                    units = openWeatherUnit,
+                    lang = openWeatherLang
+                )
+                nameWeather = response.name
+                tempWeather = response.main.temp
+                humidityWeather = response.main.humidity
+                descriptionWeather = response.weather[0].description
+                iconWeather = response.weather[0].icon
             }
-
-            val response = WeatherRetrofitClient.weatherService.getCurrentWeather(
-                lat = site.location.latitude,
-                lon = site.location.longitude,
-                apiKey = openWeatherKey,
-                units = openWeatherUnit,
-                lang = openWeatherLang
-            )
-            nameWeather = response.name
-            tempWeather = response.main.temp
-            humidityWeather = response.main.humidity
-            descriptionWeather = response.weather[0].description
-            iconWeather = response.weather[0].icon
-
         } catch (e: Exception) {
             Log.d("LaunchCampsite", "Error fetching camper site", e)
         }
@@ -689,18 +682,16 @@ fun CamperSiteScreen(
                                             "date" to java.util.Date(),
                                             "comment" to newComment,
                                             "images" to uploadedUrls,
-                                            "camper_site_id" to site.id  // Añadimos referencia al sitio
+                                            "camper_site_id" to site.id  // Added reference to the site
                                         )
 
-                                        // Saves the CamperSiteReview
-                                        val camperSiteReviewId = db.collection("camper_site_reviews").document()
-                                        camperSiteReviewId.set(camperSiteReview).await()
-
-                                        // Saves the CamperSiteReview in the CamperSite
+                                        // Saves the CamperSiteReview in the CamperSite*/
                                         val siteRef = db.collection("camper_sites").document(site.id)
-                                        siteRef.update("reviews", FieldValue.arrayUnion(camperSiteReviewId)).await()
 
-                                        // Función para actualizar el rating promedio
+                                        val reviewRef = siteRef.collection("camper_site_reviews").document()
+                                        reviewRef.set(camperSiteReview).await()
+
+                                        // Function to update the average rating
                                         updateCamperSiteRating(site.id)
 
                                         // CamperSiteReview displayed before uploading to storage
@@ -713,10 +704,9 @@ fun CamperSiteScreen(
                                             images = uploadedUrls
                                         )
 
-                                        site = site.copy(
-                                            reviews = site.reviews + listOf(newReview), // adds it to the end
-                                            reviewCount = site.reviewCount + 1
-                                        )
+                                        siteReviews = listOf(newReview) + siteReviews
+
+                                        siteRef.update("review_count", FieldValue.increment(1)).await()
 
                                         // Updates the User review count
                                         if (userEmail != null) {
@@ -748,7 +738,12 @@ fun CamperSiteScreen(
                         }
                     }
 
-                    val reviewsToShow = if (showAllReviews) site.reviews.reversed() else site.reviews.reversed().take(3)
+                    val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
+                    val reviewsToShow = if (showAllReviews) {
+                        siteReviews.sortedByDescending { LocalDate.parse(it.date, formatter) }
+                    } else {
+                        siteReviews.sortedByDescending { LocalDate.parse(it.date, formatter) }.take(3)
+                    }
                     reviewsToShow.forEach { review ->
                         ReviewItem(review = review, onImageClick = { expandedImageUrl = it })
                         if (review != reviewsToShow.last()) {
@@ -756,12 +751,12 @@ fun CamperSiteScreen(
                         }
                     }
 
-                    if (site.reviews.size > 3) {
+                    if (siteReviews.size > 3) {
                         TextButton(
                             onClick = { showAllReviews = !showAllReviews },
                             modifier = Modifier.align(Alignment.End)
                         ) {
-                            Text(if (showAllReviews) "Show less" else "See all ${site.reviews.size} reviews")
+                            Text(if (showAllReviews) "Show less" else "See all ${siteReviews.size} reviews")
                         }
                     }
                 }
@@ -905,13 +900,13 @@ fun MediaItem(
     Box(modifier = modifier) {
         if (isVideo) {
             if (showVideoPlayer) {
-                // Reproductor de video en pantalla completa
+                // Full screen video player
                 VideoPlayer(
                     videoUri = Uri.parse(mediaUrl),
                     onDismiss = { showVideoPlayer = false }
                 )
             } else {
-                // Miniatura del video
+                // Video thumbnail
                 VideoThumbnail(
                     videoUrl = mediaUrl,
                     modifier = Modifier
@@ -920,7 +915,7 @@ fun MediaItem(
                         .clickable { showVideoPlayer = true }
                 )
 
-                // Icono de video
+                // Video icon
                 Icon(
                     imageVector = Icons.Default.Videocam,
                     contentDescription = "Video",
@@ -949,47 +944,45 @@ fun updateCamperSiteRating(camperSiteId: String) {
     val db = FirebaseFirestore.getInstance()
 
     val siteRef = db.collection("camper_sites").document(camperSiteId)
-    val reviewsQuery = db.collection("camper_site_reviews")
-        .whereEqualTo("camper_site_id", camperSiteId)
+    val reviewsRef = siteRef.collection("camper_site_reviews")
 
-    Log.d("RatingUpdate", "Iniciando actualización de rating para sitio: $camperSiteId")
+    Log.d("RatingUpdate", "Starting rating update for site: $camperSiteId")
 
-    Tasks.whenAllSuccess<Any>(siteRef.get(), reviewsQuery.get())
-        .addOnSuccessListener { results ->
-            try {
-                val siteDocument = results[0] as DocumentSnapshot
-                val querySnapshot = results[1] as QuerySnapshot
+    siteRef.get()
+        .addOnSuccessListener { siteSnapshot ->
+            if (siteSnapshot.exists()) {
+                val previousReviewCount = siteSnapshot.getLong("review_count")?.toInt() ?: 0
 
-                val initialRating = siteDocument.getDouble("rating") ?: 0.0
-                val initialReviewCount = siteDocument.getLong("review_count")?.toInt() ?: 0
+                reviewsRef.get()
+                    .addOnSuccessListener { reviewsSnapshot ->
+                        val ratings = reviewsSnapshot.documents.mapNotNull { it.getDouble("rating") }
 
-                var totalRating = initialRating * initialReviewCount
-                var totalReviews = initialReviewCount
+                        val newAverage = if (ratings.isNotEmpty()) {
+                            ratings.sum() / ratings.size
+                        } else {
+                            0.0
+                        }
 
-                for (document in querySnapshot) {
-                    val rating = document.getDouble("rating")
-                    if (rating != null) {
-                        totalRating += rating
-                        totalReviews++
+                        val updates = hashMapOf<String, Any>(
+                            "rating" to newAverage,
+                            "review_count" to previousReviewCount
+                        )
+
+                        siteRef.update(updates)
                     }
-                }
-
-                val averageRating = if (totalReviews > 0) totalRating / totalReviews else 0.0
-
-                val updates = hashMapOf<String, Any>(
-                    "rating" to averageRating,
-                    "review_count" to totalReviews
-                )
-
-                siteRef.update(updates)
-                    .addOnSuccessListener {
-                        Log.d("RatingUpdate", "Promedio actualizado correctamente: $averageRating ($totalReviews valoraciones)")
+                    .addOnFailureListener {
+                        Log.e("RatingUpdate", "Failed to fetch reviews", it)
                     }
-            } catch (e: Exception) { }
+            } else {
+                Log.w("RatingUpdate", "CamperSite not found: $camperSiteId")
+            }
+        }
+        .addOnFailureListener {
+            Log.e("RatingUpdate", "Failed to fetch CamperSite document", it)
         }
 }
 
-// Añade esta nueva función para el reproductor de video
+// Add this new feature to the video player
 @OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(
@@ -999,7 +992,7 @@ fun VideoPlayer(
 ) {
     val context = LocalContext.current
 
-    // Crea y configura el ExoPlayer
+    // Create and configure the ExoPlayer
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(videoUri))
@@ -1008,14 +1001,14 @@ fun VideoPlayer(
         }
     }
 
-    // Libera el reproductor cuando el composable se descompone
+    // Release the player when the composable breaks down
     DisposableEffect(Unit) {
         onDispose {
             exoPlayer.release()
         }
     }
 
-    // Muestra el reproductor en un diálogo
+    // Shows the player in a dialog
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -1043,7 +1036,7 @@ fun VideoPlayer(
     }
 }
 
-// Mantén la función VideoThumbnail como está actualmente
+// Keep the VideoThumbnail feature as it is currently
 @Composable
 fun VideoThumbnail(videoUrl: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
