@@ -102,17 +102,10 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.media3.common.util.UnstableApi
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.FirebaseFirestore
 import com.tfg.campandgo.ui.component.LocationFetcher
-import com.tfg.campandgo.ui.viewmodel.MapsViewModel
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.pow
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -186,7 +179,7 @@ fun CamperSiteScreen(
     val camperSiteLocation: LatLng? = remember(rawSiteLocation) {
         if (rawSiteLocation.latitude != 0.0 || rawSiteLocation.longitude != 0.0) {
             LatLng(rawSiteLocation.latitude, rawSiteLocation.longitude).also {
-                Log.d("LocationDebug", "Ubicación real del sitio: $it")
+                Log.d("LocationDebug", "Actual location of the site: $it")
             }
         } else null
     }
@@ -239,6 +232,7 @@ fun CamperSiteScreen(
                 val loadedReviews = reviewSnapshots.documents.map { doc ->
                     CamperSiteReview(
                         userName = doc.getString("user_name") ?: "",
+                        userImage = doc.getString("user_image") ?: "",
                         rating = doc.getDouble("rating") ?: 0.0,
                         comment = doc.getString("comment") ?: "",
                         date = doc.getDate("date")?.toInstant()?.atZone(ZoneId.systemDefault())
@@ -350,21 +344,48 @@ fun CamperSiteScreen(
                 )
             }
 
-            IconButton(
+            // Favorite button
+            Button(
                 onClick = {
-                    navigator.navigate("chat_camper_site/${camperSiteID}")
+                    scope.launch {
+                        try {
+                            if (userEmail != null) {
+                                val userRef = db.collection("users").document(userEmail)
+                                val camperSiteRef = db.document("/camper_sites/${site.id}")
+
+                                if (isFavorite) {
+                                    userRef.update("favorite_camper_sites", FieldValue.arrayRemove(camperSiteRef)).await()
+                                    Toast.makeText(context, "Site removed from favorites.", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    userRef.update("favorite_camper_sites", FieldValue.arrayUnion(camperSiteRef)).await()
+                                    Toast.makeText(context, "Site successfully added to favorites.", Toast.LENGTH_SHORT).show()
+                                }
+                                // Cambiar estado visual
+                                isFavorite = !isFavorite
+                            }
+                        } catch (e: Exception) {
+                            Log.e("Favorites", "Error switching favorites", e)
+                        }
+                    }
                 },
-                enabled = isWithinRange,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isFavorite) MaterialTheme.colorScheme.secondary
+                    else MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White
+                ),
+                shape = CircleShape,
+                contentPadding = PaddingValues(0.dp),
                 modifier = Modifier
                     .padding(16.dp)
                     .size(48.dp)
-                    .background(Color.White.copy(alpha = 0.7f), CircleShape)
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.TopEnd),
             ) {
                 Icon(
-                    imageVector = Icons.Default.Chat,
-                    contentDescription = "Chat",
-                    tint = if (isWithinRange) Color.Black else Color.Gray
+                    imageVector = if (isFavorite) Icons.Default.Check
+                    else Icons.Default.Star,
+                    contentDescription = if (isFavorite) "Remove from favorites"
+                    else "Add to favorites",
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
 
@@ -398,7 +419,7 @@ fun CamperSiteScreen(
             ) {
                 Icon(
                     imageVector = if (isVisited) Icons.Default.CheckCircle else Icons.Default.AddCircle,
-                    contentDescription = if (isVisited) "Marcado como visitado" else "Añadir a visitados",
+                    contentDescription = if (isVisited) "Marked as visited" else "Add to visited",
                     modifier = Modifier.size(28.dp),
                     tint = if (isVisited) {
                         MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
@@ -781,11 +802,13 @@ fun CamperSiteScreen(
                                     isUploading = true
                                     try {
                                         var userName = "Anonymous"
+                                        var userImage = ""
 
                                         // Gets user name
                                         if (userEmail != null) {
                                             val userDoc = db.collection("users").document(userEmail).get().await()
                                             userName = userDoc.getString("user_name") ?: "Anonymous"
+                                            userImage = userDoc.getString("user_image") ?: ""
                                         }
 
                                         // Uploads the images to the storage
@@ -799,11 +822,11 @@ fun CamperSiteScreen(
                                         // Creates the CamperSiteReview
                                         val camperSiteReview = hashMapOf(
                                             "user_name" to userName,
+                                            "user_image" to userImage,
                                             "rating" to newRating,
                                             "date" to java.util.Date(),
                                             "comment" to newComment,
-                                            "images" to uploadedUrls,
-                                            "camper_site_id" to site.id  // Added reference to the site
+                                            "images" to uploadedUrls
                                         )
 
                                         // Saves the CamperSiteReview in the CamperSite*/
@@ -888,51 +911,23 @@ fun CamperSiteScreen(
     // Floating favorites button
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
+            .fillMaxSize()
     ) {
-        Button(
+        IconButton(
             onClick = {
-                scope.launch {
-                    try {
-                        if (userEmail != null) {
-                            val userRef = db.collection("users").document(userEmail)
-                            val camperSiteRef = db.document("/camper_sites/${site.id}")
-
-                            if (isFavorite) {
-                                // Eliminar de favoritos
-                                userRef.update("favorite_camper_sites", FieldValue.arrayRemove(camperSiteRef)).await()
-                                Toast.makeText(context, "Site removed from favorites.", Toast.LENGTH_SHORT).show()
-                            } else {
-                                // Añadir a favoritos
-                                userRef.update("favorite_camper_sites", FieldValue.arrayUnion(camperSiteRef)).await()
-                                Toast.makeText(context, "Site successfully added to favorites.", Toast.LENGTH_SHORT).show()
-                            }
-                            // Cambiar estado visual
-                            isFavorite = !isFavorite
-                        }
-                    } catch (e: Exception) {
-                        Log.e("Favorites", "Error switching favorites", e)
-                    }
-                }
+                navigator.navigate("chat_camper_site/${camperSiteID}")
             },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (isFavorite) MaterialTheme.colorScheme.secondary
-                else MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
-            ),
-            shape = CircleShape,
-            contentPadding = PaddingValues(0.dp),
+            enabled = isWithinRange,
             modifier = Modifier
+                .padding(16.dp)
                 .size(48.dp)
-                .align(Alignment.TopEnd),
+                .background(Color.LightGray, CircleShape)
+                .align(Alignment.BottomEnd)
         ) {
             Icon(
-                imageVector = if (isFavorite) Icons.Default.Check
-                else Icons.Default.Star,
-                contentDescription = if (isFavorite) "Remove from favorites"
-                else "Add to favorites",
-                tint = MaterialTheme.colorScheme.onPrimary
+                imageVector = Icons.Default.Chat,
+                contentDescription = "Chat",
+                tint = if (isWithinRange) Color.Black else Color.Gray
             )
         }
     }
@@ -949,7 +944,14 @@ fun ReviewItem(review: CamperSiteReview, onImageClick: (String) -> Unit) {
                 .size(40.dp)
                 .background(Color.LightGray, CircleShape)
         ) {
-            // User avatar placeholder
+            Image(
+                painter = rememberAsyncImagePainter(review.userImage),
+                contentDescription = "User image",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+            )
         }
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -1163,7 +1165,6 @@ fun VideoPlayer(
 // Keep the VideoThumbnail feature as it is currently
 @Composable
 fun VideoThumbnail(videoUrl: String, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
     val bitmap = remember { mutableStateOf<Bitmap?>(null) }
 
     LaunchedEffect(videoUrl) {
