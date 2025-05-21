@@ -786,7 +786,6 @@ fun saveCamperSiteToFirestore(camperSite: CamperSite) {
             "rating" to camperSite.rating,
             "review_count" to camperSite.reviewCount,
             "amenities" to camperSite.amenities,
-            "reviews" to listOf<DocumentReference>(),
             "location" to GeoPoint(camperSite.location.latitude, camperSite.location.longitude)
         )
 

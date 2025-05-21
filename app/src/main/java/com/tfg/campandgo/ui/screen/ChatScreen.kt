@@ -4,12 +4,15 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
@@ -17,8 +20,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -79,62 +85,100 @@ fun ChatScreen(camperSiteId: String, userName: String?, navigator: NavController
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Chat del camping", style = MaterialTheme.typography.titleLarge) },
+                title = {
+                    Text(
+                        "Chat del camping",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = { navigator.popBackStack() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surface
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.surface)
         ) {
-            // Message list
-            LazyColumn(
+            // Message list with gradient effect
+            Box(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 8.dp),
-                state = scrollState,
-                reverseLayout = true
-            ) {
-                items(messages.reversed()) { msg ->
-                    MessageBubble(
-                        message = msg,
-                        isCurrentUser = msg.senderName == userName,
-                        modifier = Modifier.padding(vertical = 4.dp)
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            0f to MaterialTheme.colorScheme.surface,
+                            0.1f to MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                            1f to MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                        )
                     )
+            ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    state = scrollState,
+                    reverseLayout = true
+                ) {
+                    items(messages.reversed()) { msg ->
+                        MessageBubble(
+                            message = msg,
+                            isCurrentUser = msg.senderName == userName,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
                 }
             }
 
-            // Input area
-            MessageInputField(
-                messageText = newMessage,
-                onMessageChange = { newMessage = it },
-                imageUri = imageUri,
-                onImageChange = { imageUri = it },
-                onSend = {
-                    if (newMessage.isNotBlank() || imageUri != null) {
-                        scope.launch {
-                            sendMessage(
-                                db = db,
-                                camperSiteId = camperSiteId,
-                                userName = userName,
-                                messageText = newMessage,
-                                imageUri = imageUri,
-                                onComplete = {
-                                    newMessage = ""
-                                    imageUri = null
-                                }
-                            )
+            // Input area with shadow
+            Box(
+                modifier = Modifier
+                    .shadow(elevation = 8.dp)
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                MessageInputField(
+                    messageText = newMessage,
+                    onMessageChange = { newMessage = it },
+                    imageUri = imageUri,
+                    onImageChange = { imageUri = it },
+                    onSend = {
+                        if (newMessage.isNotBlank() || imageUri != null) {
+                            scope.launch {
+                                sendMessage(
+                                    db = db,
+                                    camperSiteId = camperSiteId,
+                                    userName = userName,
+                                    messageText = newMessage,
+                                    imageUri = imageUri,
+                                    onComplete = {
+                                        newMessage = ""
+                                        imageUri = null
+                                    }
+                                )
+                            }
                         }
-                    }
-                },
-                onAddImageClick = { launcher.launch("image/*") },
-                modifier = Modifier.padding(8.dp)
-            )
+                    },
+                    onAddImageClick = { launcher.launch("image/*") },
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
         }
     }
 }
@@ -142,42 +186,42 @@ fun ChatScreen(camperSiteId: String, userName: String?, navigator: NavController
 @Composable
 fun MessageBubble(message: ChatMessage, isCurrentUser: Boolean, modifier: Modifier = Modifier) {
     val bubbleColor = if (isCurrentUser) {
-        MaterialTheme.colorScheme.primaryContainer
+        MaterialTheme.colorScheme.primary
     } else {
         MaterialTheme.colorScheme.surfaceVariant
     }
 
-    val alignment = if (isCurrentUser) Alignment.End else Alignment.Start
-    val shape = if (isCurrentUser) {
-        MaterialTheme.shapes.large.copy(
-            topEnd = MaterialTheme.shapes.small.topStart,
-            bottomStart = MaterialTheme.shapes.large.bottomStart,
-            bottomEnd = MaterialTheme.shapes.large.bottomEnd
-        )
+    val textColor = if (isCurrentUser) {
+        MaterialTheme.colorScheme.onPrimary
     } else {
-        MaterialTheme.shapes.large.copy(
-            topStart = MaterialTheme.shapes.small.topStart,
-            bottomStart = MaterialTheme.shapes.large.bottomStart,
-            bottomEnd = MaterialTheme.shapes.large.bottomEnd
-        )
+        MaterialTheme.colorScheme.onSurface
+    }
+
+    val timeColor = if (isCurrentUser) {
+        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
     }
 
     Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = alignment
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        horizontalAlignment = if (isCurrentUser) Alignment.End else Alignment.Start
     ) {
         if (!isCurrentUser) {
             Text(
                 text = message.senderName ?: "Anónimo",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 2.dp)
+                modifier = Modifier.padding(bottom = 4.dp, start = 8.dp)
             )
         }
 
         Surface(
             color = bubbleColor,
-            shape = shape,
+            shape = MaterialTheme.shapes.medium,
+            shadowElevation = 1.dp,
             tonalElevation = 1.dp,
             modifier = Modifier.widthIn(max = 280.dp)
         ) {
@@ -185,12 +229,13 @@ fun MessageBubble(message: ChatMessage, isCurrentUser: Boolean, modifier: Modifi
                 message.text.takeIf { it.isNotBlank() }?.let {
                     Text(
                         text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (isCurrentUser) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            lineHeightStyle = LineHeightStyle(
+                                alignment = LineHeightStyle.Alignment.Center,
+                                trim = LineHeightStyle.Trim.None
+                            )
+                        ),
+                        color = textColor
                     )
                 }
 
@@ -210,11 +255,8 @@ fun MessageBubble(message: ChatMessage, isCurrentUser: Boolean, modifier: Modifi
                 Text(
                     text = message.timestamp?.toDate()?.formatAsTime() ?: "",
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isCurrentUser) {
-                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
-                    } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    }
+                    color = timeColor,
+                    modifier = Modifier.align(Alignment.End)
                 )
             }
         }
@@ -232,78 +274,102 @@ fun MessageInputField(
     onAddImageClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Column {
-            imageUri?.let { uri ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(8.dp)
-                ) {
-                    AsyncImage(
-                        model = uri,
-                        contentDescription = "Imagen a enviar",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(MaterialTheme.shapes.medium)
-                    )
-
-                    IconButton(
-                        onClick = { onImageChange(null) },
-                        modifier = Modifier.align(Alignment.TopEnd)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Quitar imagen"
-                        )
-                    }
-                }
-            }
-
-            Row(
-                modifier = Modifier.padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+    Column(modifier = modifier) {
+        imageUri?.let { uri ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(MaterialTheme.shapes.medium)
             ) {
-                IconButton(onClick = onAddImageClick) {
-                    Icon(
-                        imageVector = Icons.Default.AddPhotoAlternate,
-                        contentDescription = "Añadir imagen"
-                    )
-                }
-
-                OutlinedTextField(
-                    value = messageText,
-                    onValueChange = onMessageChange,
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Escribe un mensaje...") },
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedBorderColor = Color.Transparent
-                    ),
-                    maxLines = 3
+                AsyncImage(
+                    model = uri,
+                    contentDescription = "Imagen a enviar",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(MaterialTheme.shapes.medium)
                 )
 
                 IconButton(
-                    onClick = onSend,
-                    enabled = messageText.isNotBlank() || imageUri != null
+                    onClick = { onImageChange(null) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Send,
-                        contentDescription = "Enviar mensaje"
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Quitar imagen",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            IconButton(
+                onClick = onAddImageClick,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AddPhotoAlternate,
+                    contentDescription = "Añadir imagen",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            OutlinedTextField(
+                value = messageText,
+                onValueChange = onMessageChange,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp),
+                placeholder = {
+                    Text(
+                        "Escribe un mensaje...",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                },
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    focusedBorderColor = MaterialTheme.colorScheme.primary
+                ),
+                shape = MaterialTheme.shapes.large,
+                maxLines = 3,
+                singleLine = false
+            )
+
+            IconButton(
+                onClick = onSend,
+                enabled = messageText.isNotBlank() || imageUri != null,
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        color = if (messageText.isNotBlank() || imageUri != null) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
+                        shape = CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Send,
+                    contentDescription = "Enviar mensaje",
+                    tint = if (messageText.isNotBlank() || imageUri != null) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
             }
         }
     }
 }
-
-
-
 private suspend fun sendMessage(
     db: FirebaseFirestore,
     camperSiteId: String,

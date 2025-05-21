@@ -52,6 +52,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.CircularProgressIndicator
@@ -216,7 +217,7 @@ fun CamperSiteScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable { expandedImageUrl = null }, // To close when pressing outside
+                    .clickable { expandedImageUrl = null },
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -284,6 +285,23 @@ fun CamperSiteScreen(
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Back",
+                    tint = Color.Black
+                )
+            }
+
+            IconButton(
+                onClick = {
+                    navigator.navigate("chat_camper_site/${camperSiteID}")
+                },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(48.dp)
+                    .background(Color.White.copy(alpha = 0.7f), CircleShape)
+                    .align(Alignment.TopCenter)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Chat,
+                    contentDescription = "Chat",
                     tint = Color.Black
                 )
             }
