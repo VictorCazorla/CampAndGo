@@ -1,6 +1,7 @@
 package com.tfg.campandgo.ui.screen
 
 import android.graphics.Bitmap
+import android.location.Location
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -52,8 +53,10 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.CircularProgressIndicator
@@ -99,8 +102,17 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.media3.common.util.UnstableApi
+import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.FirebaseFirestore
+import com.tfg.campandgo.ui.component.LocationFetcher
+import com.tfg.campandgo.ui.viewmodel.MapsViewModel
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -154,6 +166,7 @@ fun CamperSiteScreen(
 
     // Estado para controlar si es favorito
     var isFavorite by remember { mutableStateOf(false) }
+    var isVisited by remember { mutableStateOf(false) }
 
     // Comprobar si es favorito al cargar
     LaunchedEffect(userEmail, site.id) {
@@ -162,6 +175,39 @@ fun CamperSiteScreen(
             val snapshot = userRef.get().await()
             val favorites = snapshot.get("favorite_camper_sites") as? List<DocumentReference> ?: emptyList()
             isFavorite = favorites.any { it.id == site.id }
+            val visited = snapshot.get("visited_camper_sites") as? List<DocumentReference> ?: emptyList()
+            isVisited= visited.any { it.id == site.id }
+        }
+    }
+
+    var userLocation by remember { mutableStateOf<LatLng?>(null) }
+
+    val rawSiteLocation = site.location
+    val camperSiteLocation: LatLng? = remember(rawSiteLocation) {
+        if (rawSiteLocation.latitude != 0.0 || rawSiteLocation.longitude != 0.0) {
+            LatLng(rawSiteLocation.latitude, rawSiteLocation.longitude).also {
+                Log.d("LocationDebug", "Ubicación real del sitio: $it")
+            }
+        } else null
+    }
+
+    LocationFetcher { location ->
+        userLocation = location
+    }
+
+    var isWithinRange by remember { mutableStateOf(false) }
+    LaunchedEffect(userLocation, camperSiteLocation) {
+        val u = userLocation
+        val s = camperSiteLocation
+        if (u != null && s != null) {
+            val result = FloatArray(1)
+            Location.distanceBetween(
+                u.latitude, u.longitude,
+                s.latitude, s.longitude,
+                result
+            )
+            val distance = result[0]
+            isWithinRange = distance <= 500
         }
     }
 
@@ -308,6 +354,7 @@ fun CamperSiteScreen(
                 onClick = {
                     navigator.navigate("chat_camper_site/${camperSiteID}")
                 },
+                enabled = isWithinRange,
                 modifier = Modifier
                     .padding(16.dp)
                     .size(48.dp)
@@ -317,9 +364,50 @@ fun CamperSiteScreen(
                 Icon(
                     imageVector = Icons.Default.Chat,
                     contentDescription = "Chat",
-                    tint = Color.Black
+                    tint = if (isWithinRange) Color.Black else Color.Gray
                 )
             }
+
+            IconButton(
+                onClick = {
+                    if (!isVisited) {
+                        scope.launch {
+                            userEmail?.let { email ->
+                                val userRef = db.collection("users").document(email)
+                                val snapshot = userRef.get().await()
+                                val visitedRefs = snapshot.get("visited_camper_sites")
+                                        as? List<DocumentReference> ?: emptyList()
+                                val siteRef = db.collection("camper_sites").document(site.id)
+                                if (visitedRefs.none { it.id == site.id }) {
+                                    userRef.update(
+                                        "visited_camper_sites",
+                                        FieldValue.arrayUnion(siteRef)
+                                    ).await()
+                                    isVisited = true
+                                    userRef.update("visited_places", FieldValue.increment(1)).await()
+                                }
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(48.dp)
+                    .align(Alignment.BottomEnd)
+                    .background(Color.White.copy(alpha = 0.7f), CircleShape)
+            ) {
+                Icon(
+                    imageVector = if (isVisited) Icons.Default.CheckCircle else Icons.Default.AddCircle,
+                    contentDescription = if (isVisited) "Marcado como visitado" else "Añadir a visitados",
+                    modifier = Modifier.size(28.dp),
+                    tint = if (isVisited) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    }
+                )
+            }
+
 
             // Title and address
             Column(

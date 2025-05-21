@@ -52,6 +52,36 @@ fun ToggleButtonGrid(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
+            DropdownMenuItem(
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = if (isNearbySearchActive) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            text = if (isNearbySearchActive) "Hide places" else "Show places",
+                            color = if (isNearbySearchActive) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
+                onClick = {
+                    onNearbySearchToggle()
+                    expanded = false
+                }
+            )
+
+            Divider()
+
             buttons.forEach { (key, icon) ->
                 val isSelected = selectedButtons.contains(key)
 
@@ -93,36 +123,6 @@ fun ToggleButtonGrid(
                     }
                 )
             }
-
-            Divider()
-
-            DropdownMenuItem(
-                text = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = if (isNearbySearchActive) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(Modifier.width(16.dp))
-                        Text(
-                            text = if (isNearbySearchActive) "Hide places" else "Show places",
-                            color = if (isNearbySearchActive) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                onClick = {
-                    onNearbySearchToggle()
-                    expanded = false
-                }
-            )
 
             Divider()
 

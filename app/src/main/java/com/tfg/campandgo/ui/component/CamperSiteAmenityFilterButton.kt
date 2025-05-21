@@ -94,6 +94,36 @@ fun CamperSiteAmenityFilterButton(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
+
+            // Opción para mostrar/ocultar campamentos
+            DropdownMenuItem(
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = if (showFirebasePlaces) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Text(
+                            text = if (showFirebasePlaces) "Ocultar sitios" else "Mostrar sitios",
+                            color = if (showFirebasePlaces) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
+                onClick = {
+                    onToggleFirebaseSearch()
+                    expanded = false
+                }
+            )
+
+            Divider()
+
             // Filtros de amenities
             amenities.forEach { (label, icon) ->
                 val isSelected = selectedAmenities.value.contains(label)
@@ -131,33 +161,6 @@ fun CamperSiteAmenityFilterButton(
             }
 
             Divider()
-
-            // Opción para mostrar/ocultar campamentos
-            DropdownMenuItem(
-                text = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = if (showFirebasePlaces) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(Modifier.width(16.dp))
-                        Text(
-                            text = if (showFirebasePlaces) "Ocultar sitios" else "Mostrar sitios",
-                            color = if (showFirebasePlaces) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                onClick = {
-                    onToggleFirebaseSearch()
-                    expanded = false
-                }
-            )
 
             DropdownMenuItem(
                 text = {
