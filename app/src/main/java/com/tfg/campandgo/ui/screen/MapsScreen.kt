@@ -1,13 +1,12 @@
 package com.tfg.campandgo.ui.screen
 
-import CamperSiteAmenityFilterButton
+import com.tfg.campandgo.ui.component.CamperSiteAmenityFilterButton
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -15,9 +14,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Festival
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -70,7 +66,7 @@ fun MapScreen(
     LaunchedEffect(currentLocation) {
         currentLocation?.let { location ->
             cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(location, 15f))
-            if (apiKey != null) viewModel.clearSearchLocations(context)
+            if (apiKey != null) viewModel.clearSearchLocations()
         }
     }
 
@@ -83,7 +79,7 @@ fun MapScreen(
         } else if (apiKey != null && showNearbyPlaces) {
             viewModel.cleanNearbyPlaces()
             termFilterList.forEach { filter ->
-                viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, context, filter)
+                viewModel.fetchNearbyPlaces(viewModel.selectedLocation.value!!, apiKey, filter)
             }
         }
     }
@@ -96,7 +92,7 @@ fun MapScreen(
                     if (apiKey != null) {
                         viewModel.cleanNearbyPlaces()
                         termFilterList.forEach { filter ->
-                            viewModel.fetchNearbyPlaces(it, apiKey, context, filter)
+                            viewModel.fetchNearbyPlaces(it, apiKey, filter)
                         }
                     }
                     cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(it, 15f))
@@ -156,7 +152,7 @@ fun MapScreen(
                 if (apiKey != null) {
                     viewModel.cleanNearbyPlaces()
                     termFilterList.forEach { filter ->
-                        viewModel.fetchNearbyPlaces(latLng, apiKey, context, filter)
+                        viewModel.fetchNearbyPlaces(latLng, apiKey, filter)
                     }
                 }
             }
@@ -220,7 +216,7 @@ fun MapScreen(
                             icon = icon,
                             onClick = {
                                 selectedPlaceId = place.placeId
-                                viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey ?: "", context)
+                                viewModel.getPlaceDetailsFromPlaceId(place.placeId, apiKey ?: "")
                                 true
                             }
                         )
@@ -272,7 +268,7 @@ fun MapScreen(
                             viewModel.selectedLocation.value = latLng
                             latLng?.let { cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(it, 15f)) }
                             selectedPlaceId = selectedPlace.placeId
-                            viewModel.getPlaceDetailsFromPlaceId(selectedPlace.placeId, apiKey ?: "", context)
+                            viewModel.getPlaceDetailsFromPlaceId(selectedPlace.placeId, apiKey ?: "")
                         })
                     }
                 }
@@ -340,7 +336,6 @@ fun MapScreen(
                                             viewModel.fetchNearbyPlaces(
                                                 viewModel.selectedLocation.value!!,
                                                 apiKey,
-                                                context,
                                                 filter
                                             )
                                         }
@@ -366,8 +361,7 @@ fun MapScreen(
                                     val center = viewModel.selectedLocation.value ?: currentLocation ?: return@CamperSiteAmenityFilterButton
                                     viewModel.fetchCamperSitesFromFirestore(
                                         center = center,
-                                        radius = 10.0,
-                                        context = context
+                                        radius = 10.0
                                     )
                                 } else {
                                     viewModel.clearFirebaseCamperSites()

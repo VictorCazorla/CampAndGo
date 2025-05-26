@@ -191,12 +191,11 @@ fun CamperSiteScreen(
     var isWithinRange by remember { mutableStateOf(false) }
     LaunchedEffect(userLocation, camperSiteLocation) {
         val u = userLocation
-        val s = camperSiteLocation
-        if (u != null && s != null) {
+        if (u != null && camperSiteLocation != null) {
             val result = FloatArray(1)
             Location.distanceBetween(
                 u.latitude, u.longitude,
-                s.latitude, s.longitude,
+                camperSiteLocation.latitude, camperSiteLocation.longitude,
                 result
             )
             val distance = result[0]
@@ -259,7 +258,7 @@ fun CamperSiteScreen(
                 iconWeather = response.weather[0].icon
             }
         } catch (e: Exception) {
-            Log.d("LaunchCampsite", "Error fetching camper site", e)
+            Log.e("LaunchCampsite", "Error fetching camper site", e)
         }
     }
 
@@ -1072,8 +1071,6 @@ fun updateCamperSiteRating(camperSiteId: String) {
     val siteRef = db.collection("camper_sites").document(camperSiteId)
     val reviewsRef = siteRef.collection("camper_site_reviews")
 
-    Log.d("RatingUpdate", "Starting rating update for site: $camperSiteId")
-
     siteRef.get()
         .addOnSuccessListener { siteSnapshot ->
             if (siteSnapshot.exists()) {
@@ -1113,8 +1110,7 @@ fun updateCamperSiteRating(camperSiteId: String) {
 @Composable
 fun VideoPlayer(
     videoUri: Uri,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
 

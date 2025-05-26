@@ -19,22 +19,17 @@ import com.tfg.campandgo.ui.viewmodel.MapsViewModel
  */
 @Composable
 fun PermissionHandler(viewModel: MapsViewModel) {
-    // Obtiene el contexto actual
     val context = LocalContext.current
-    // Estado para controlar la visibilidad del cuadro de diálogo de permisos
     var showPermissionDialog by remember { mutableStateOf(false) }
 
     // Lanza una solicitud de permiso utilizando un ActivityResultLauncher
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        // Actualiza el estado del permiso en el ViewModel
         viewModel.hasLocationPermission.value = isGranted
-        // Muestra el cuadro de diálogo si el permiso es rechazado
         if (!isGranted) showPermissionDialog = true
     }
 
-    // Efecto lanzado cuando el componente es mostrado por primera vez
     LaunchedEffect(Unit) {
         when {
             // Verifica si el permiso ya ha sido otorgado
@@ -44,26 +39,24 @@ fun PermissionHandler(viewModel: MapsViewModel) {
             ) == PackageManager.PERMISSION_GRANTED -> {
                 viewModel.hasLocationPermission.value = true
             }
-            // Solicita el permiso si no ha sido otorgado
-            else -> permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            else -> permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) // Solicita el permiso si no ha sido otorgado
         }
     }
 
-    // Muestra un cuadro de diálogo si el permiso es rechazado
     if (showPermissionDialog) {
         AlertDialog(
             onDismissRequest = { showPermissionDialog = false },
-            title = { Text("Permiso requerido") },
-            text = { Text("Necesitamos acceso a tu ubicación para mostrar el mapa") },
+            title = { Text("Permission required") },
+            text = { Text("We need access to your location to display the map.") },
             confirmButton = {
                 Button(onClick = {
                     // Vuelve a solicitar el permiso cuando el usuario lo confirma
                     permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                     showPermissionDialog = false
-                }) { Text("Reintentar") }
+                }) { Text("Retry") }
             },
             dismissButton = {
-                TextButton(onClick = { showPermissionDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { showPermissionDialog = false }) { Text("Cancel") }
             }
         )
     }

@@ -18,12 +18,9 @@ import com.google.android.gms.maps.model.LatLng
  */
 @Composable
 fun LocationFetcher(onLocationFetched: (LatLng) -> Unit) {
-    // Obtiene el contexto actual
     val context = LocalContext.current
-    // Instancia del cliente de ubicación de Google
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
-    // Lanza un efecto al inicializar el componente
     LaunchedEffect(Unit) {
         // Comprueba si se tiene el permiso de ubicación precisa
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)

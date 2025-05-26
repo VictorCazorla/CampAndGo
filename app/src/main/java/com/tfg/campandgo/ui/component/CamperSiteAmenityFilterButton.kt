@@ -1,3 +1,5 @@
+package com.tfg.campandgo.ui.component
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,18 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.runtime.State
-import androidx.compose.material.icons.filled.ChildCare
-import androidx.compose.material.icons.filled.DirectionsBike
-import androidx.compose.material.icons.filled.Festival
-import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.LocalLaundryService
-import androidx.compose.material.icons.filled.LocalParking
 import androidx.compose.material.icons.filled.NightsStay
-import androidx.compose.material.icons.filled.OutdoorGrill
 import androidx.compose.material.icons.filled.Park
-import androidx.compose.material.icons.filled.Pets
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Pool
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shower
@@ -29,7 +22,6 @@ import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -38,7 +30,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,7 +41,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.tfg.campandgo.R
 
-
 @Composable
 fun CamperSiteAmenityFilterButton(
     selectedAmenities: State<Set<String>>,
@@ -61,17 +51,17 @@ fun CamperSiteAmenityFilterButton(
     var expanded by remember { mutableStateOf(false) }
 
     val amenities = listOf(
-        "Pernocta" to Icons.Default.NightsStay,
+        "Overnight stay" to Icons.Default.NightsStay,
         "Wifi" to Icons.Default.Wifi,
-        "Agua potable" to Icons.Default.WaterDrop,
-        "Electricidad" to Icons.Default.Bolt,
-        "Duchas" to Icons.Default.Shower,
-        "Lavandería" to Icons.Default.LocalLaundryService,
-        "Baños" to Icons.Default.Wc,
-        "Zona de picnic" to Icons.Default.Park,
-        "Tienda" to Icons.Default.Store,
-        "Restaurante" to Icons.Default.Restaurant,
-        "Recepción 24h" to Icons.Default.AccessTime,
+        "Drinking water" to Icons.Default.WaterDrop,
+        "Electricity" to Icons.Default.Bolt,
+        "Shower" to Icons.Default.Shower,
+        "Laundry" to Icons.Default.LocalLaundryService,
+        "WC" to Icons.Default.Wc,
+        "Picnic area" to Icons.Default.Park,
+        "Store" to Icons.Default.Store,
+        "Restaurant" to Icons.Default.Restaurant,
+        "24h" to Icons.Default.AccessTime,
     )
 
     Box {
@@ -80,7 +70,7 @@ fun CamperSiteAmenityFilterButton(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.camping_icon),
-                contentDescription = "Filtrar sitios camper",
+                contentDescription = "Filter camper sites",
                 modifier = Modifier.size(28.dp),
                 tint = if (selectedAmenities.value.isNotEmpty() || selectedAmenities.value.isNotEmpty() || showFirebasePlaces) {
                     MaterialTheme.colorScheme.primary
@@ -95,7 +85,7 @@ fun CamperSiteAmenityFilterButton(
             onDismissRequest = { expanded = false }
         ) {
 
-            // Opción para mostrar/ocultar campamentos
+            // Opción para mostrar/ocultar sitios camper
             DropdownMenuItem(
                 text = {
                     Row(
@@ -111,7 +101,7 @@ fun CamperSiteAmenityFilterButton(
                         )
                         Spacer(Modifier.width(16.dp))
                         Text(
-                            text = if (showFirebasePlaces) "Ocultar sitios" else "Mostrar sitios",
+                            text = if (showFirebasePlaces) "Hide sites" else "Show sites",
                             color = if (showFirebasePlaces) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -164,7 +154,7 @@ fun CamperSiteAmenityFilterButton(
 
             DropdownMenuItem(
                 text = {
-                    Text("Cerrar", color = MaterialTheme.colorScheme.primary)
+                    Text("Close", color = MaterialTheme.colorScheme.primary)
                 },
                 onClick = { expanded = false }
             )

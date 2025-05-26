@@ -57,13 +57,13 @@ fun PlaceDetailsSection(place: PlaceDetails) {
 
             // Dirección
             Text(
-                text = "Dirección: ${place.formatted_address}",
+                text = "Address: ${place.formatted_address}",
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
             )
 
             Text(
-                text = "Rating: ${place.rating ?: "No disponible"}",
+                text = "Rating: ${place.rating ?: "Not available"}",
                 style = MaterialTheme.typography.titleMedium
             )
         }

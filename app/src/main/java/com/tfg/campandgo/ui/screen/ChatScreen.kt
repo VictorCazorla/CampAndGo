@@ -40,6 +40,23 @@ import java.util.Date
 import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
 
+/**
+ * Pantalla principal del chat grupal asociado a un sitio camper específico.
+ *
+ * Esta interfaz permite a los usuarios enviar mensajes de texto e imágenes relacionados
+ * con un lugar concreto. Los mensajes se sincronizan en tiempo real con Firestore.
+ *
+ * Características:
+ * - Recuperación automática del nombre del sitio camper.
+ * - Escucha activa en tiempo real de nuevos mensajes gracias a `addSnapshotListener`.
+ * - Visualización de mensajes con burbujas diferenciadas por usuario.
+ * - Campo de entrada con posibilidad de adjuntar imágenes.
+ * - Desplazamiento automático al último mensaje recibido.
+ *
+ * @param camperSiteId ID del sitio camper al que pertenece el chat.
+ * @param userName Nombre del usuario actual, usado para diferenciar visualmente sus mensajes.
+ * @param navigator Controlador de navegación para volver atrás en la jerarquía de pantallas.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(camperSiteId: String, userName: String?, navigator: NavController) {
@@ -185,6 +202,24 @@ fun ChatScreen(camperSiteId: String, userName: String?, navigator: NavController
     }
 }
 
+/**
+ * Muestra un mensaje individual dentro del chat con estilo de burbuja.
+ *
+ * Este componente visual representa un mensaje enviado o recibido en la interfaz del chat,
+ * diferenciando visualmente si el mensaje pertenece al usuario actual o a otro.
+ * Además del texto, puede incluir una imagen y la hora del mensaje.
+ *
+ * @param message Objeto de tipo [ChatMessage] que contiene el texto, la imagen y metadatos del mensaje.
+ * @param isCurrentUser Indica si el mensaje fue enviado por el usuario actual para alinear y colorear la burbuja correctamente.
+ * @param modifier Modificador opcional para ajustes de diseño externos.
+ *
+ * Características:
+ * - Alineación a la derecha si el mensaje es del usuario actual, izquierda en caso contrario.
+ * - Muestra el nombre del remitente si no es el usuario actual.
+ * - Color y estilo diferenciados entre mensajes propios y ajenos.
+ * - Soporte para mostrar imágenes adjuntas.
+ * - Hora del mensaje alineada al final de la burbuja.
+ */
 @Composable
 fun MessageBubble(message: ChatMessage, isCurrentUser: Boolean, modifier: Modifier = Modifier) {
     val bubbleColor = if (isCurrentUser) {
@@ -255,7 +290,7 @@ fun MessageBubble(message: ChatMessage, isCurrentUser: Boolean, modifier: Modifi
 
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = message.timestamp?.toDate()?.formatAsTime() ?: "",
+                    text = message.timestamp.toDate().formatAsTime(),
                     style = MaterialTheme.typography.labelSmall,
                     color = timeColor,
                     modifier = Modifier.align(Alignment.End)
@@ -265,6 +300,24 @@ fun MessageBubble(message: ChatMessage, isCurrentUser: Boolean, modifier: Modifi
     }
 }
 
+/**
+ * Campo de entrada de mensajes con opción para adjuntar una imagen.
+ *
+ * Esta función composable muestra un campo de texto para escribir mensajes,
+ * un botón para adjuntar imágenes desde la galería o cámara, y un botón para enviar el mensaje.
+ * También muestra una vista previa de la imagen si se ha seleccionado una.
+ *
+ * @param messageText El texto actual del mensaje que está escribiendo el usuario.
+ * @param onMessageChange Función que se llama cuando el texto del mensaje cambia.
+ * @param imageUri URI de la imagen adjunta actualmente, si existe.
+ * @param onImageChange Función que se llama cuando se elimina o selecciona una nueva imagen.
+ * @param onSend Función que se llama al pulsar el botón de enviar.
+ * @param onAddImageClick Función que se llama al pulsar el botón para seleccionar una imagen.
+ * @param modifier Modificador opcional para ajustar el diseño del componente.
+ *
+ * Esta función asegura que el botón de enviar solo se active cuando hay texto o una imagen lista para enviar.
+ * También incluye un diseño responsive usando Material Design 3.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessageInputField(
@@ -372,6 +425,23 @@ fun MessageInputField(
         }
     }
 }
+
+/**
+ * Envía un mensaje al chat de un sitio camper específico en Firestore.
+ *
+ * Esta función guarda un mensaje (con texto y/o imagen) en la subcolección "messages"
+ * dentro del documento correspondiente al sitio camper en la colección "chats".
+ * Si hay más de 30 mensajes, elimina el más antiguo antes de añadir uno nuevo.
+ *
+ * @param db La instancia de FirebaseFirestore usada para acceder a la base de datos.
+ * @param camperSiteId El ID del sitio camper al que pertenece el chat.
+ * @param userName El nombre del usuario que envía el mensaje. Si es null, se usará "Anónimo".
+ * @param messageText El texto del mensaje. Puede estar vacío si se envía una imagen.
+ * @param imageUri URI de la imagen a enviar, si hay una. Si no se proporciona texto ni imagen válida, lanza una excepción.
+ * @param onComplete Función callback que se ejecuta cuando el mensaje ha sido enviado correctamente.
+ *
+ * @throws Exception Si ocurre un error al subir la imagen o guardar el mensaje. Si se cancela una corrutina, se propaga la [CancellationException].
+ */
 private suspend fun sendMessage(
     db: FirebaseFirestore,
     camperSiteId: String,
@@ -434,7 +504,11 @@ private suspend fun sendMessage(
     }
 }
 
-
+/**
+ * Sube una imagen enviada al chat a Storage.
+ *
+ * @param uri Uri de la imagen.
+ */
 private suspend fun uploadImageAndGetUrl(uri: Uri): String {
     return withContext(Dispatchers.IO) {
         val storageRef = FirebaseStorage.getInstance().reference
@@ -444,6 +518,9 @@ private suspend fun uploadImageAndGetUrl(uri: Uri): String {
     }
 }
 
+/**
+ * Formatea la fecha.
+ */
 private fun Date.formatAsTime(): String {
     return SimpleDateFormat("HH:mm", Locale.getDefault()).format(this)
 }

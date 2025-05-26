@@ -15,27 +15,25 @@ import com.tfg.campandgo.data.model.Prediction
  *
  * @param prediction Objeto de tipo `Prediction` que contiene la información de la sugerencia a mostrar.
  * @param onSuggestionSelected Callback que se ejecuta cuando el usuario selecciona una sugerencia.
- * Devuelve el objeto `Prediction` correspondiente.
+ * @return Devuelve el objeto `Prediction` correspondiente.
  */
 @Composable
 fun SuggestionItem(
     prediction: Prediction,
-    onSuggestionSelected: (Prediction) -> Unit,
-    modifier: Modifier
+    onSuggestionSelected: (Prediction) -> Unit
 ) {
     TextButton(
         onClick = { onSuggestionSelected(prediction) },
-        modifier = Modifier.fillMaxWidth() // Botón que ocupa el ancho completo del contenedor
+        modifier = Modifier.fillMaxWidth()
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp) // Espaciado alrededor del contenido
+                .padding(8.dp)
         ) {
-            // Contenedor principal para los textos
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Start // Alinea los textos al inicio
+                horizontalAlignment = Alignment.Start
             ) {
 
                 Text(

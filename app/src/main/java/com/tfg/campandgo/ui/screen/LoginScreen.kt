@@ -1,7 +1,5 @@
 package com.tfg.campandgo.ui.screen
 
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -12,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -38,18 +35,18 @@ fun LoginScreen(
     onGoogleSignInClick: () -> Unit
 ) {
     // Variables de estado para las entradas del usuario y elementos de la interfaz
-    var email by remember { mutableStateOf("") } // Entrada del correo electrónico
-    var password by remember { mutableStateOf("") } // Entrada de la contraseña
-    var errorMessage by remember { mutableStateOf<String?>(null) } // Mensaje de error a mostrar
-    var isPasswordVisible by remember { mutableStateOf(false) } // Alterna la visibilidad de la contraseña
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isPasswordVisible by remember { mutableStateOf(false) }
     val auth = Firebase.auth
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp), // Padding de la pantalla
-        verticalArrangement = Arrangement.Center, // Centra el contenido verticalmente
-        horizontalAlignment = Alignment.CenterHorizontally // Centra el contenido horizontalmente
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         /**
          * Campo de texto para el correo electrónico.
@@ -58,11 +55,11 @@ fun LoginScreen(
         TextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Correo electrónico") },
+            label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(8.dp)) // Espacio entre campos
+        Spacer(modifier = Modifier.height(8.dp))
 
         /**
          * Campo de texto para la contraseña.
@@ -71,14 +68,14 @@ fun LoginScreen(
         TextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Contraseña") },
+            label = { Text("Password") },
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                     Icon(
                         imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                        contentDescription = if (isPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                        contentDescription = if (isPasswordVisible) "Hide password" else "Show password"
                     )
                 }
             }
@@ -99,29 +96,30 @@ fun LoginScreen(
          * Valida las entradas e intenta iniciar sesión usando Firebase Authentication.
          */
         CustomButton(
-            text = "Iniciar sesión",
+            text = "Login",
             onClick = {
                 if (email.isBlank() || password.isBlank()) {
-                    errorMessage = "Por favor, rellena todos los campos."
+                    errorMessage = "Please fill in all fields."
                 } else {
                     auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            //TODO pasar info a preference
                             onLoginClick()
                         } else {
-                            when (task.exception) {
+                            errorMessage = when (task.exception) {
                                 is FirebaseAuthInvalidUserException -> {
-                                    errorMessage = "No se encontró una cuenta con este correo."
+                                    "No account was found with this email."
                                 }
+
                                 is FirebaseAuthInvalidCredentialsException -> {
-                                    errorMessage = when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
-                                        "ERROR_INVALID_EMAIL" -> "La dirección de correo electrónico está mal formada."
-                                        "ERROR_WRONG_PASSWORD" -> "Contraseña incorrecta. Inténtalo de nuevo."
-                                        else -> "Credenciales inválidas. Por favor, verifica tu correo y contraseña."
+                                    when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
+                                        "ERROR_INVALID_EMAIL" -> "The email address is badly formatted."
+                                        "ERROR_WRONG_PASSWORD" -> "Incorrect password. Please try again."
+                                        else -> "Invalid credentials. Please check your email and password."
                                     }
                                 }
+
                                 else -> {
-                                    errorMessage = "El inicio de sesión falló. Por favor, verifica tu correo y contraseña."
+                                    "Login failed. Please verify your email and password."
                                 }
                             }
                         }
@@ -139,14 +137,14 @@ fun LoginScreen(
          * Permite al usuario iniciar sesión usando su cuenta de Google.
          */
         CustomButton(
-            text = "Acceder con Google",
+            text = "Sign in with Google",
             onClick = onGoogleSignInClick,
             backgroundColor = Color(0xFF4285F4), // Azul de Google
             contentColor = Color.White,
             icon = {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Ícono de Google",
+                    contentDescription = "Google icon",
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -159,7 +157,7 @@ fun LoginScreen(
          * Navega al usuario a la pantalla de registro.
          */
         TextButton(onClick = onRegisterClick) {
-            Text("¿No tienes una cuenta? Regístrate", color = MaterialTheme.colorScheme.primary)
+            Text("Don't have an account? Sign up", color = MaterialTheme.colorScheme.primary)
         }
     }
 }

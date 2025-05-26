@@ -21,19 +21,18 @@ import com.tfg.campandgo.data.model.Place
 fun NearbyPlaceItem(place: Place, onPlaceSelected: (Place) -> Unit) {
     Card(
         modifier = Modifier
-            .fillMaxWidth() // Ocupa todo el ancho disponible
-            .padding(8.dp) // Espaciado alrededor de la tarjeta
-            .clickable { onPlaceSelected(place) }, // Acción al hacer clic
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp) // Elevación de la tarjeta
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable { onPlaceSelected(place) },
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        // Contenedor principal para el contenido del lugar
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = place.name,
                 style = MaterialTheme.typography.titleMedium
             )
             Text(
-                text = place.vicinity ?: "Dirección no disponible",
+                text = place.vicinity ?: "Address not available",
                 style = MaterialTheme.typography.bodySmall
             )
         }

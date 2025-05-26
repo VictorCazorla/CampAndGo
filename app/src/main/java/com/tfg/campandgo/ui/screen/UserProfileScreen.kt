@@ -79,7 +79,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
-                val downloadUrl = uploadToFirebase(it, "profile_images", context)
+                val downloadUrl = uploadToFirebase("profile_images", context)
                 downloadUrl?.let { url ->
                     tempUserImage = url
                 }
@@ -92,7 +92,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
-                val downloadUrl = uploadToFirebase(it, "banner_images", context)
+                val downloadUrl = uploadToFirebase("banner_images", context)
                 downloadUrl?.let { url ->
                     tempBannerImage = url
                 }
@@ -105,11 +105,10 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
-                val downloadUrl = uploadToFirebase(it, "profile_images", context)
+                val downloadUrl = uploadToFirebase("profile_images", context)
                 downloadUrl?.let { url ->
                     tempUserImage = url
-                    // Updates the view immediately
-                    userImage = url
+                    userImage = url     // Updates the view immediately
                 }
             }
         }
@@ -119,12 +118,12 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            profileCameraImageUri.value?.let { uri ->
+            profileCameraImageUri.value?.let { _ ->
                 scope.launch {
-                    val downloadUrl = uploadToFirebase(uri, "profile_images", context)
+                    val downloadUrl = uploadToFirebase("profile_images", context)
                     downloadUrl?.let { url ->
                         tempUserImage = url
-                        userImage = url // Updates the view immediately
+                        userImage = url     // Updates the view immediately
                     }
                 }
             }
@@ -210,21 +209,18 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     // Función para eliminar favoritos (nueva)
     suspend fun removeFromFavorites(email: String, siteId: String) {
         try {
-            val db = FirebaseFirestore.getInstance()
             val userRef = db.collection("users").document(email)
 
             db.runTransaction { transaction ->
                 val userDoc = transaction.get(userRef)
                 val currentFavorites = userDoc.get("favorite_camper_sites") as? List<DocumentReference> ?: emptyList()
 
-                val siteRef = db.collection("camper_sites").document(siteId)
                 val updatedFavorites = currentFavorites.filter { it.id != siteId }
 
                 transaction.update(userRef, "favorite_camper_sites", updatedFavorites)
             }.await()
         } catch (e: Exception) {
             Log.e("FavoriteSites", "Error removing favorite", e)
-            throw e // Puedes manejar esto mostrando un Snackbar al usuario
         }
     }
 
@@ -997,13 +993,18 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     )
 }
 
-// Simplified CamperSite object
+/**
+ * Simplified CamperSite object.
+ */
 data class SimpleCamperSite(
     val id: String,
     val name: String,
     val rating: Double
 )
 
+/**
+ * AchievementData object.
+ */
 data class AchievementData(
     val icon: ImageVector,
     val title: String,
@@ -1103,6 +1104,21 @@ fun AchievementItem(
     }
 }
 
+/**
+ * Composable que representa una etiqueta visual (chip) con estilo redondeado.
+ *
+ * Este componente se utiliza habitualmente para mostrar filtros, categorías o etiquetas
+ * que el usuario puede eliminar si se proporciona una función de callback.
+ *
+ * Características:
+ * - Muestra un texto representativo.
+ * - Opción de incluir un botón de eliminación si se define `onDelete`.
+ * - Personalización de color de fondo mediante el parámetro `color`.
+ *
+ * @param label Texto que se mostrará en el chip.
+ * @param onDelete Función opcional que se ejecutará al pulsar el icono de cerrar. Si es `null`, no se muestra el botón.
+ * @param color Color de fondo del chip.
+ */
 @Composable
 fun Chip(
     label: String,
@@ -1145,12 +1161,13 @@ fun Chip(
     }
 }
 
-// Uploads the image to Firebase Storage
-suspend fun uploadToFirebase(uri: Uri, folder: String, context: Context): String? {
+/**
+ * Uploads the image to Firebase Storage
+ */
+suspend fun uploadToFirebase(folder: String, context: Context): String? {
     return try {
         val storageRef = FirebaseStorage.getInstance().reference
         val imageRef = storageRef.child("$folder/${UUID.randomUUID()}.jpg")
-        val uploadTask = imageRef.putFile(uri).await()
         val downloadUrl = imageRef.downloadUrl.await()
 
         downloadUrl.toString().also { url ->

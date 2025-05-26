@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
@@ -29,7 +28,6 @@ import kotlinx.coroutines.tasks.await
  * @param navigator Navegador que permite moverse entre pantallas.
  * @see MapsViewModel Para más detalles sobre el ViewModel utilizado.
  * @see MapScreen Para la pantalla de visualización del mapa.
- * @see ErrorScreen Para mostrar mensajes de error.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -43,9 +41,9 @@ fun HomeScreen(navigator: NavController) {
     val user = Firebase.auth.currentUser
     val db = Firebase.firestore
 
-    // Si no se encuentra la API Key, mostrar un mensaje de error y salir
+    // Si no se encuentra la API Key
     if (apiKey == null) {
-        ErrorScreen(message = "Error: API Key no configurada en el Manifest")
+        Log.e("HomeScreen", "Error: API Key not configured in the Manifest")
         return
     }
 
@@ -61,7 +59,7 @@ fun HomeScreen(navigator: NavController) {
         // Realizar búsqueda de ubicaciones cuando el texto de búsqueda tenga más de 2 caracteres
         LaunchedEffect(searchQuery) {
             if (searchQuery.length > 2) {
-                viewModel.searchLocations(searchQuery, apiKey, context)
+                viewModel.searchLocations(searchQuery, apiKey)
             }
         }
 
@@ -87,7 +85,7 @@ fun HomeScreen(navigator: NavController) {
             currentLocation = viewModel.selectedLocation.value,
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
-            onSearch = { placeId -> viewModel.getLocationDetails(placeId, apiKey, context) },
+            onSearch = { placeId -> viewModel.getLocationDetails(placeId, apiKey) },
             searchSuggestions = viewModel.searchSuggestions,
             nearbyPlaces = viewModel.nearbyPlaces,
             viewModel = viewModel

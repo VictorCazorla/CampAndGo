@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -25,11 +24,11 @@ import com.tfg.campandgo.data.model.Prediction
  * @param searchQuery Cadena de texto que representa la consulta actual en el campo de búsqueda.
  * @param onSearchQueryChange Callback que se ejecuta cuando el usuario modifica la consulta.
  * @param suggestions Lista de objetos `Prediction` que representan las sugerencias basadas en la consulta.
- * @param errorMessage Mensaje de error opcional que se muestra si ocurre un problema durante la búsqueda.
  * @param onSuggestionSelected Callback que se ejecuta cuando el usuario selecciona una sugerencia.
  *                              Recibe el objeto `Prediction` correspondiente.
  * @param onCenterMap Callback que se ejecuta al presionar el botón para centrar el mapa en la ubicación actual.
  * @param onSearch Callback que se ejecuta cuando el usuario presiona el botón de búsqueda.
+ * @param modifier Modificador estético.
  */
 @Composable
 fun SearchBarWithSuggestions(
@@ -113,8 +112,7 @@ fun SearchBarWithSuggestions(
                             onSuggestionSelected = {
                                 onSuggestionSelected(prediction)
                                 onSearch() // Ejecuta la búsqueda después de seleccionar
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                            }
                         )
                     }
                 }

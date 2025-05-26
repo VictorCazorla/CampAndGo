@@ -17,7 +17,6 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.tfg.campandgo.CustomButton
 
-
 /**
  * Una función composable que representa la pantalla de registro.
  * Permite a los usuarios registrar una nueva cuenta ingresando su correo electrónico,
@@ -30,13 +29,13 @@ import com.tfg.campandgo.CustomButton
 @Composable
 fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) {
     // Variables de estado para la entrada de datos
-    var email by remember { mutableStateOf("") } // Almacena el correo electrónico ingresado por el usuario
-    var password by remember { mutableStateOf("") } // Almacena la contraseña ingresada
-    var passwordVerify by remember { mutableStateOf("") } // Almacena la contraseña para la verificación
-    var errorMessage by remember { mutableStateOf<String?>(null) } // Mensaje de error a mostrar en caso de validaciones fallidas
-    var isPasswordVisible by remember { mutableStateOf(false) } // Alterna la visibilidad de la contraseña principal
-    var isPasswordVerifyVisible by remember { mutableStateOf(false) } // Alterna la visibilidad de la confirmación de contraseña
-    val auth = Firebase.auth // Instancia de autenticación de Firebase
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVerify by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    var isPasswordVerifyVisible by remember { mutableStateOf(false) }
+    val auth = Firebase.auth
 
     Column(
         modifier = Modifier
@@ -123,24 +122,26 @@ fun RegisterScreen(onRegisterClick: () -> Unit, onBackToLoginClick: () -> Unit) 
                     errorMessage = "Passwords do not match"
                 } else if (password.length > 10) {
                     errorMessage = "Password must be under 10 characters"
+                } else if (password.length < 6) {
+                    errorMessage = "Password must be over 6 characters"
                 } else if (!password.contains(Regex("\\d+"))) {
                     errorMessage = "Password must contain at least one digit."
                 } else {
                     auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            //TODO PASAR A PROFILE
                             onRegisterClick()
                         } else {
-                            when (task.exception) {
+                            errorMessage = when (task.exception) {
                                 is FirebaseAuthInvalidCredentialsException -> {
-                                    errorMessage = when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
+                                    when ((task.exception as FirebaseAuthInvalidCredentialsException).errorCode) {
                                         "ERROR_INVALID_EMAIL" -> "The email address is badly formatted."
                                         "ERROR_WRONG_PASSWORD" -> "Incorrect password. Please try again."
                                         else -> "Invalid credentials. Please check your email and password."
                                     }
                                 }
+
                                 else -> {
-                                    errorMessage = "Registration failed. Please check the fields and try again."
+                                    "Registration failed. Please check the fields and try again."
                                 }
                             }
                         }

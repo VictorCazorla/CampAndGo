@@ -1,7 +1,6 @@
 package com.tfg.campandgo.ui.screen
 
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -14,7 +13,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import com.tfg.campandgo.CustomButton
-
 
 /**
  * Una función composable que representa la pantalla de inicio.
@@ -36,13 +34,10 @@ fun StartScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.Center, // Centra los elementos verticalmente
-        horizontalAlignment = Alignment.CenterHorizontally // Centra los elementos horizontalmente
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        /**
-         * Título de bienvenida.
-         * Muestra un texto de introducción al usuario.
-         */
+        // Título de bienvenida. Muestra un texto de introducción al usuario.
         Text(
             text = "Welcome to CampAndGo!",
             fontSize = 28.sp,
@@ -54,10 +49,7 @@ fun StartScreen(
                 .fillMaxWidth()
         )
 
-        /**
-         * Botón para iniciar sesión.
-         * Permite al usuario acceder a la pantalla de inicio de sesión.
-         */
+        //Botón para iniciar sesión. Permite al usuario acceder a la pantalla de inicio de sesión.
         CustomButton(
             text = "Login",
             onClick = onLoginClick,
@@ -67,10 +59,7 @@ fun StartScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        /**
-         * Botón para iniciar sesión con Google.
-         * Permite al usuario autenticarse utilizando su cuenta de Google.
-         */
+        //Botón para iniciar sesión con Google. Permite al usuario autenticarse utilizando su cuenta de Google.
         CustomButton(
             text = "Login with Google",
             onClick = onGoogleSignInClick,
@@ -87,10 +76,7 @@ fun StartScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        /**
-         * Botón para registrarse.
-         * Permite al usuario navegar a la pantalla de registro.
-         */
+        //Botón para registrarse. Permite al usuario navegar a la pantalla de registro.
         TextButton(onClick = onRegisterClick) {
             Text("Don't have an account? Register", color = MaterialTheme.colorScheme.primary)
         }

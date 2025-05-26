@@ -3,7 +3,6 @@ package com.tfg.campandgo.ui.viewmodel
 import android.content.Context
 import android.location.Geocoder
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -50,9 +49,8 @@ class MapsViewModel : ViewModel() {
      *
      * @param query El texto de búsqueda.
      * @param apiKey La API Key de Google Places.
-     * @param context El contexto de la aplicación para mostrar Toasts.
      */
-    fun searchLocations(query: String, apiKey: String, context: Context) {
+    fun searchLocations(query: String, apiKey: String) {
         viewModelScope.launch {
             try {
                 val response = GoogleRetrofitClient.placesService.autocomplete(
@@ -65,30 +63,20 @@ class MapsViewModel : ViewModel() {
                     searchSuggestions.addAll(response.predictions)
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    context,
-                    "Error buscando ubicaciones: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Log.e("MapsViewModel", "Error searching for locations: ${e.message}")
             }
         }
     }
 
     /**
      * Limpia las ubicaciones de la API de autocompletado de Google Places.
-     *
-     * @param context El contexto de la aplicación para mostrar Toasts.
      */
-    fun clearSearchLocations(context: Context) {
+    fun clearSearchLocations() {
         viewModelScope.launch {
             try {
                 searchSuggestions.clear()
             } catch (e: Exception) {
-                Toast.makeText(
-                    context,
-                    "Error cerrando ubicaciones: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Log.e("MapsViewModel", "Error closing locations: ${e.message}")
             }
         }
     }
@@ -98,9 +86,8 @@ class MapsViewModel : ViewModel() {
      *
      * @param placeId El ID del lugar.
      * @param apiKey La API Key de Google Places.
-     * @param context El contexto de la aplicación para mostrar Toasts.
      */
-    fun getLocationDetails(placeId: String, apiKey: String, context: Context) {
+    fun getLocationDetails(placeId: String, apiKey: String) {
         viewModelScope.launch {
             try {
                 val response = GoogleRetrofitClient.placesService.geocode(
@@ -113,7 +100,9 @@ class MapsViewModel : ViewModel() {
                         selectedLocation.value = LatLng(it.lat, it.lng)
                     }
                 }
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                Log.e("MapsViewModel", "Error: ${e.message}")
+            }
         }
     }
 
@@ -137,11 +126,7 @@ class MapsViewModel : ViewModel() {
             }
         } catch (e: IOException) {
             e.printStackTrace()
-            Toast.makeText(
-                context,
-                "Error geocodificando la dirección: ${e.message}",
-                Toast.LENGTH_SHORT
-            ).show()
+            Log.e("MapsViewModel", "Error geocoding the address: ${e.message}")
             onResult(null)
         }
     }
@@ -151,36 +136,22 @@ class MapsViewModel : ViewModel() {
      *
      * @param placeId El ID del lugar.
      * @param apiKey La API Key de Google Places.
-     * @param context El contexto de la aplicación para mostrar Toasts.
      */
-    fun getPlaceDetailsFromPlaceId(placeId: String, apiKey: String, context: Context) {
+    fun getPlaceDetailsFromPlaceId(placeId: String, apiKey: String) {
         viewModelScope.launch {
             try {
                 if (placeId.isNotEmpty()) {
-                    Log.e("MapsViewModel", "placeId: $placeId - apiKey: $apiKey")
-
                     val response = GoogleRetrofitClient.placesService.getPlaceDetails(placeId, apiKey)
                     if (response.status == "OK") {
                         placeDetails.value = response.result
                     } else {
-                        Toast.makeText(
-                            context,
-                            "Error obteniendo detalles del lugar: ${response.status}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        Log.e(
-                            "MapsViewModel",
-                            "Error obteniendo detalles del lugar: ${response.status} - ${response.result}"
-                        )
+                        Log.e("MapsViewModel", "Error getting location details: ${response.status}")
                     }
                 } else {
-                    Toast.makeText(context, "placeId inválido: $placeId", Toast.LENGTH_SHORT).show()
-                    Log.e("MapsViewModel", "placeId inválido: $placeId")
+                    Log.e("MapsViewModel", "Invalid camper site: $placeId")
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "Error en la solicitud: ${e.message}", Toast.LENGTH_SHORT)
-                    .show()
-                Log.e("MapsViewModel", "Excepción en getPlaceDetails: ${e.message}")
+                Log.e("MapsViewModel", "Exception in getPlaceDetails: ${e.message}")
             }
         }
     }
@@ -190,13 +161,11 @@ class MapsViewModel : ViewModel() {
      *
      * @param location La ubicación desde la cual buscar.
      * @param apiKey La API Key de Google Places.
-     * @param context El contexto de la aplicación para mostrar Toasts.
-     * @param terms La lista de términos para filtrar los lugares.
+     * @param type El término para filtrar los lugares.
      */
     fun fetchNearbyPlaces(
         location: LatLng,
         apiKey: String,
-        context: Context,
         type: String
     ) {
         viewModelScope.launch {
@@ -210,9 +179,9 @@ class MapsViewModel : ViewModel() {
 
                 if (response.status == "OK") {
                     nearbyPlaces.addAll(response.results)
-                    nearbyPlaces.forEach { place -> Log.d("MapsViewModel", "Places: $place") }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.e("MapsViewModel", "Error: ${e.message}")
             }
         }
     }
@@ -226,10 +195,15 @@ class MapsViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Busca sitios camper cercanos almacenados en Firestore.
+     *
+     * @param center La ubicación desde la cual buscar.
+     * @param radius El radio de búesqueda.
+     */
     fun fetchCamperSitesFromFirestore(
         center: LatLng,
         radius: Double,
-        context: Context,
         onSuccess: (() -> Unit)? = null
     ) {
         viewModelScope.launch {
@@ -272,18 +246,10 @@ class MapsViewModel : ViewModel() {
                         onSuccess?.invoke()
                     }
                     .addOnFailureListener { exception ->
-                        Toast.makeText(
-                            context,
-                            "Error cargando sitios: ${exception.message}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Log.e("MapsViewModel", "Error: ${exception.message}")
                     }
             } catch (e: Exception) {
-                Toast.makeText(
-                    context,
-                    "Error: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Log.e("MapsViewModel", "Error: ${e.message}")
             }
         }
     }
@@ -317,7 +283,11 @@ class MapsViewModel : ViewModel() {
         }
     }
 
-
+    /**
+     * Añade y quita los filtros.
+     *
+     * @param amenity El filtro.
+     */
     fun toggleAmenityFilter(amenity: String) {
         selectedAmenities.value = if (selectedAmenities.value.contains(amenity)) {
             selectedAmenities.value - amenity
@@ -325,5 +295,4 @@ class MapsViewModel : ViewModel() {
             selectedAmenities.value + amenity
         }
     }
-
 }

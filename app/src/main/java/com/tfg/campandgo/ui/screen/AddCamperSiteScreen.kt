@@ -1,7 +1,6 @@
 package com.tfg.campandgo.ui.screen
 
 import android.content.ContentValues
-import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -33,7 +32,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AssistChip
@@ -75,7 +73,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.IconButton
 import coil.compose.rememberAsyncImagePainter
-import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.tfg.campandgo.data.model.CamperSite
@@ -85,6 +82,7 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -116,7 +114,7 @@ fun AddCamperSiteScreen(
     var name by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var rating by remember { mutableStateOf(0.0) }
+    var rating by remember { mutableDoubleStateOf(0.0) }
     var amenities by remember { mutableStateOf(listOf<String>()) }
     var newAmenity by remember { mutableStateOf("") }
 
@@ -127,19 +125,17 @@ fun AddCamperSiteScreen(
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
     var capturedVideoUri by remember { mutableStateOf<Uri?>(null) }
 
-
-    // Contexto
     val context = LocalContext.current
 
     // Función para validar campos
     fun validateFields(): Boolean {
         return when {
             name.isBlank() -> {
-                Toast.makeText(context,"Por favor, ingresa el nombre del sitio", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context,"Please, enter the name of the site", Toast.LENGTH_SHORT).show()
                 false
             }
             address.isBlank() -> {
-                Toast.makeText(context,"Por favor, ingresa la dirección del sitio", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context,"Please, enter the site address", Toast.LENGTH_SHORT).show()
                 false
             }
             else -> true
@@ -150,7 +146,7 @@ fun AddCamperSiteScreen(
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        uris?.let { uriList ->
+        uris.let { uriList ->
             val newImages = uriList.filter { uri ->
                 context.contentResolver.getType(uri)?.startsWith("image/") == true
             }
@@ -217,11 +213,11 @@ fun AddCamperSiteScreen(
     // Diálogo para añadir amenidades
     var showAmenityDialog by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
-    val amenityOptions = listOf("Pernocta", "Wifi", "Agua potable", "Electricidad",
-        "Duchas", "Lavandería", "Baños", "Zona de picnic",
-        "Barbacoa", "Piscina", "Área infantil", "Aparcamiento",
-        "Tienda", "Restaurante", "Recepción 24h", "Alquiler de bicicletas",
-        "Zona para mascotas")
+    val amenityOptions = listOf("Overnight stay", "Wifi", "Drinking water", "Electricity",
+        "Shower", "Laundry", "WC", "Picnic area",
+        "Barbecue", "Pool", "Children's area", "Parking",
+        "Store", "Restaurant", "24h", "Bicycle rental",
+        "Pet area")
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -233,7 +229,7 @@ fun AddCamperSiteScreen(
                 ),
                 title = {
                     Text(
-                        "Nuevo Sitio Camper",
+                        "New Camper Site",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -249,7 +245,7 @@ fun AddCamperSiteScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Cerrar"
+                            contentDescription = "Close"
                         )
                     }
                 }
@@ -262,7 +258,7 @@ fun AddCamperSiteScreen(
                         try {
                             scope.launch {
                                 try {
-                                    val (imageUrls, videoUrls) = uploadMediaToFirebaseStorage(context, images, videos)
+                                    val (imageUrls, videoUrls) = uploadMediaToFirebaseStorage(images, videos)
 
                                     val newCamperSite = CamperSite(
                                         id = UUID.randomUUID().toString(),
@@ -283,9 +279,8 @@ fun AddCamperSiteScreen(
                                         navigator.popBackStack()
                                     }
                                 } catch (e: Exception) {
-                                    Log.e("AddCamperSite", "Error saving camper site", e)
                                     withContext(Dispatchers.Main) {
-                                        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Error saving camper site.", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             }
@@ -300,7 +295,7 @@ fun AddCamperSiteScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Save,
-                    contentDescription = "Guardar",
+                    contentDescription = "Save",
                     tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
@@ -314,7 +309,7 @@ fun AddCamperSiteScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             Text(
-                text = "Imagenes del sitio",
+                text = "Images from the site",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -362,7 +357,7 @@ fun AddCamperSiteScreen(
                         ) {
                             Icon(
                                 Icons.Default.Folder,
-                                contentDescription = "Añadir desde galería",
+                                contentDescription = "Add from gallery",
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -384,7 +379,7 @@ fun AddCamperSiteScreen(
                         ) {
                             Icon(
                                 painter = rememberVectorPainter(Icons.Default.Videocam),
-                                contentDescription = "Grabar video",
+                                contentDescription = "Record video",
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -405,7 +400,7 @@ fun AddCamperSiteScreen(
                         ) {
                             Icon(
                                 Icons.Default.CameraAlt,
-                                contentDescription = "Añadir imagen",
+                                contentDescription = "Add image",
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -413,12 +408,11 @@ fun AddCamperSiteScreen(
                 }
             }
 
-
             Spacer(modifier = Modifier.height(24.dp))
 
             // Información básica
             Text(
-                text = "Información básica",
+                text = "Basic information",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -431,7 +425,7 @@ fun AddCamperSiteScreen(
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Nombre del sitio*") },
+                        label = { Text("Site name*") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp)
@@ -442,7 +436,7 @@ fun AddCamperSiteScreen(
                     OutlinedTextField(
                         value = address,
                         onValueChange = { address = it },
-                        label = { Text("Dirección*") },
+                        label = { Text("Address*") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp)
@@ -453,7 +447,7 @@ fun AddCamperSiteScreen(
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
-                        label = { Text("Descripción") },
+                        label = { Text("Description") },
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 4,
                         shape = RoundedCornerShape(12.dp)
@@ -465,7 +459,7 @@ fun AddCamperSiteScreen(
 
             // Rating
             Text(
-                text = "Valoración",
+                text = "Rating",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -479,7 +473,7 @@ fun AddCamperSiteScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Puntuación: ", style = MaterialTheme.typography.bodyMedium)
+                        Text("Score: ", style = MaterialTheme.typography.bodyMedium)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "%.1f".format(rating),
@@ -514,7 +508,7 @@ fun AddCamperSiteScreen(
 
             // Servicios
             Text(
-                text = "Servicio",
+                text = "Service",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -541,7 +535,7 @@ fun AddCamperSiteScreen(
                                     leadingIcon = {
                                         Icon(
                                             Icons.Default.Close,
-                                            contentDescription = "Eliminar",
+                                            contentDescription = "Delete",
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -555,7 +549,7 @@ fun AddCamperSiteScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Añadir servicio")
+                        Text("Add service")
                     }
                 }
             }
@@ -566,7 +560,7 @@ fun AddCamperSiteScreen(
     if (showAmenityDialog) {
         AlertDialog(
             onDismissRequest = { showAmenityDialog = false },
-            title = { Text("Seleccionar servicios", style = MaterialTheme.typography.titleLarge) },
+            title = { Text("Select services", style = MaterialTheme.typography.titleLarge) },
             text = {
                 Column {
                     // Menú desplegable
@@ -578,7 +572,7 @@ fun AddCamperSiteScreen(
                             .padding(16.dp)
                     ) {
                         Text(
-                            text = if (newAmenity.isEmpty()) "Selecciona un servicio" else newAmenity,
+                            text = newAmenity.ifEmpty { "Select a service" },
                             color = if (newAmenity.isEmpty()) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             else MaterialTheme.colorScheme.onSurface
                         )
@@ -603,7 +597,7 @@ fun AddCamperSiteScreen(
                     // Mostrar servicios seleccionados
                     if (amenities.isNotEmpty()) {
                         Text(
-                            text = "Servicios seleccionados:",
+                            text = "Selected services:",
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.padding(top = 16.dp)
                         )
@@ -624,7 +618,7 @@ fun AddCamperSiteScreen(
                                     leadingIcon = {
                                         Icon(
                                             Icons.Default.Close,
-                                            contentDescription = "Eliminar",
+                                            contentDescription = "Delete",
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -645,7 +639,7 @@ fun AddCamperSiteScreen(
                     enabled = newAmenity.isNotBlank() && !amenities.contains(newAmenity),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Añadir")
+                    Text("Add")
                 }
             },
             dismissButton = {
@@ -657,7 +651,7 @@ fun AddCamperSiteScreen(
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
-                    Text("Cerrar")
+                    Text("Close")
                 }
             }
         )
@@ -665,9 +659,10 @@ fun AddCamperSiteScreen(
 }
 
 /**
- * Guarda el sitio camper en Firestore.
+ * Genera las miniaturas.
  *
- * @param camperSite El CamperSite que es almacenado.
+ * @param uri URI de la imagen/vídeo.
+ * @param isVideo Si es o no un vídeo.
  */
 @Composable
 fun MediaThumbnail(uri: Uri, isVideo: Boolean, onDelete: () -> Unit) {
@@ -683,7 +678,7 @@ fun MediaThumbnail(uri: Uri, isVideo: Boolean, onDelete: () -> Unit) {
                     val frame = mediaMetadataRetriever.getFrameAtTime(1000000)
                     bitmap.value = frame
                 } catch (e: Exception) {
-                    Log.e("VideoThumbnail", "Error al obtener miniatura", e)
+                    Log.e("VideoThumbnail", "Error getting thumbnail", e)
                 } finally {
                     mediaMetadataRetriever.release()
                 }
@@ -700,7 +695,7 @@ fun MediaThumbnail(uri: Uri, isVideo: Boolean, onDelete: () -> Unit) {
             if (bitmap.value != null) {
                 Image(
                     bitmap = bitmap.value!!.asImageBitmap(),
-                    contentDescription = "Miniatura de video",
+                    contentDescription = "Video thumbnail",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize()
@@ -725,7 +720,7 @@ fun MediaThumbnail(uri: Uri, isVideo: Boolean, onDelete: () -> Unit) {
         } else {
             Image(
                 painter = rememberAsyncImagePainter(uri),
-                contentDescription = "Media del sitio",
+                contentDescription = "Site media",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxSize()
@@ -743,7 +738,7 @@ fun MediaThumbnail(uri: Uri, isVideo: Boolean, onDelete: () -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.Default.Close,
-                contentDescription = "Eliminar",
+                contentDescription = "Delete",
                 tint = Color.White,
                 modifier = Modifier
                     .background(Color.Black.copy(alpha = 0.5f), CircleShape)
@@ -794,18 +789,23 @@ fun saveCamperSiteToFirestore(camperSite: CamperSite) {
             .document(camperSite.id)
             .set(camperSiteData)
             .addOnSuccessListener {
-                Log.d("Firestore", "Documento añadido con ID: ${camperSite.id}")
+                Log.d("Firestore", "Document added with ID: ${camperSite.id}")
             }
             .addOnFailureListener { e ->
-                Log.d("Firestore", "Error añadiendo documento", e)
+                Log.e("Firestore", "Error adding document", e)
             }
     } catch (e: Exception) {
-        Log.d("Firestore", "Error preparando datos", e)
+        Log.e("Firestore", "Error preparing data", e)
     }
 }
 
+/**
+ * SUbe las imágenes y los vídeos a Storage.
+ *
+ * @param images Lista de URIs de las imágenes.
+ * @param videos Lista de URIs de las vídeos.
+ */
 suspend fun uploadMediaToFirebaseStorage(
-    context: Context,
     images: List<Uri>,
     videos: List<Uri>
 ): Pair<List<String>, List<String>> = withContext(Dispatchers.IO) {
@@ -818,11 +818,10 @@ suspend fun uploadMediaToFirebaseStorage(
         try {
             val fileName = "camper_sites/images/${UUID.randomUUID()}.jpg"
             val fileRef = storage.child(fileName)
-            val uploadTask = fileRef.putFile(uri).await()
             val url = fileRef.downloadUrl.await().toString()
             imageUrls.add(url)
         } catch (e: Exception) {
-            Log.e("Storage", "Error al subir imagen: ${uri}", e)
+            Log.e("Storage", "Error uploading image: $uri", e)
         }
     }
 
@@ -831,11 +830,10 @@ suspend fun uploadMediaToFirebaseStorage(
         try {
             val fileName = "camper_sites/videos/${UUID.randomUUID()}.mp4"
             val fileRef = storage.child(fileName)
-            val uploadTask = fileRef.putFile(uri).await()
             val url = fileRef.downloadUrl.await().toString()
             videoUrls.add(url)
         } catch (e: Exception) {
-            Log.e("Storage", "Error al subir video: ${uri}", e)
+            Log.e("Storage", "Error uploading video: $uri", e)
         }
     }
 
