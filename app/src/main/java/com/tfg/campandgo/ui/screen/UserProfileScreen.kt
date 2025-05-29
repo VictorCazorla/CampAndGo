@@ -863,7 +863,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                         .fillMaxWidth()
                         .heightIn(min = 100.dp, max = 300.dp)
                         .padding(bottom = 16.dp)
-                        .background(Color.White, RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
                         .padding(16.dp)
                 ) {
                     Column {

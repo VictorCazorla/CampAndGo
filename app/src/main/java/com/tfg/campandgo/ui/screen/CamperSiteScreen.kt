@@ -414,7 +414,8 @@ fun CamperSiteScreen(
                     .padding(16.dp)
                     .size(48.dp)
                     .align(Alignment.BottomEnd)
-                    .background(Color.White.copy(alpha = 0.7f), CircleShape)
+                    .background(Color.White.copy(alpha = 0.7f), CircleShape),
+                enabled = isWithinRange
             ) {
                 Icon(
                     imageVector = if (isVisited) Icons.Default.CheckCircle else Icons.Default.AddCircle,
@@ -427,7 +428,6 @@ fun CamperSiteScreen(
                     }
                 )
             }
-
 
             // Title and address
             Column(
