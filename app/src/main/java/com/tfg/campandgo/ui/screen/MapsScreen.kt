@@ -27,6 +27,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.google.maps.android.compose.*
@@ -135,6 +136,15 @@ fun MapScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        val mapStyle = remember {
+            try {
+                context.resources.openRawResource(R.raw.map_style_vintage)
+                    .bufferedReader()
+                    .use { it.readText() }
+            } catch (e: Exception) {
+                null
+            }
+        }
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -144,7 +154,8 @@ fun MapScreen(
                 isTrafficEnabled = true,
                 minZoomPreference = 1f,
                 maxZoomPreference = 47.5f,
-                mapType = MapType.NORMAL
+                mapType = MapType.NORMAL,
+                mapStyleOptions = mapStyle?.let { MapStyleOptions(it) }
             ),
             uiSettings = MapUiSettings(myLocationButtonEnabled = true),
             onMapClick = { latLng ->
