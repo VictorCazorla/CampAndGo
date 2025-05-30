@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -154,9 +155,17 @@ fun MapScreen(
             onMapClick = { latLng ->
                 viewModel.selectedLocation.value = latLng
                 if (apiKey != null) {
+
                     viewModel.cleanNearbyPlaces()
                     termFilterList.forEach { filter ->
                         viewModel.fetchNearbyPlaces(latLng, apiKey, filter)
+                    }
+                    if (showFirebasePlaces) {
+                        val center = viewModel.selectedLocation.value ?: currentLocation ?: LatLng(0.0, 0.0)
+                        viewModel.fetchCamperSitesFromFirestore(
+                            center = center,
+                            radius = 10.0
+                        )
                     }
                 }
             }
@@ -249,7 +258,7 @@ fun MapScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter)
+                .align(Alignment.BottomStart)
                 .padding(16.dp)
         ) {
             if (showNearbyPlaces) {
@@ -299,36 +308,42 @@ fun MapScreen(
         ) {
             Card(
                 modifier = Modifier
-                    .width(300.dp)
-                    .height(50.dp),
+                    .width(320.dp)
+                    .height(60.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                shape = MaterialTheme.shapes.medium
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Profile
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        Surface(color = Color.Transparent, shape = CircleShape) {
-                            IconButton(onClick = {
-                                navigator.navigate("user_profile/${user?.email}")
-                            }) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.profile_icon),
-                                    contentDescription = "Access user profile",
-                                    modifier = Modifier.size(28.dp),
-                                )
-                            }
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        IconButton(
+                            onClick = { navigator.navigate("user_profile/${user?.email}") },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.prof_icon),
+                                contentDescription = "Access user profile",
+                                modifier = Modifier.size(24.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
                         }
                     }
 
                     // Filter nearby places (Google)
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
                         ToggleButtonGrid(
                             onFilterSelected = handleFilterSelected,
                             onNearbySearchToggle = {
@@ -353,7 +368,10 @@ fun MapScreen(
                     }
 
                     // Camper site filter by amenities and visibility toggle
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
                         CamperSiteAmenityFilterButton(
                             selectedAmenities = viewModel.selectedAmenities,
                             onAmenityToggle = { amenity ->

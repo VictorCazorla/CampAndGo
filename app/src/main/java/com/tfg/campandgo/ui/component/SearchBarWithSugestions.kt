@@ -1,6 +1,7 @@
 package com.tfg.campandgo.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,6 +31,7 @@ import com.tfg.campandgo.data.model.Prediction
  * @param onSearch Callback que se ejecuta cuando el usuario presiona el botón de búsqueda.
  * @param modifier Modificador estético.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBarWithSuggestions(
     searchQuery: String,
@@ -42,19 +44,20 @@ fun SearchBarWithSuggestions(
 ) {
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .width(300.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(8.dp)
+                .padding(12.dp)
         ) {
             // Fila de búsqueda
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -62,20 +65,28 @@ fun SearchBarWithSuggestions(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
-                    label = { Text("") },
+                    placeholder = { Text("Search here...") },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     },
                     modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 56.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        .weight(0.2f)
+                        .height(56.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                        unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurface
                     ),
                     singleLine = true
                 )
@@ -84,7 +95,7 @@ fun SearchBarWithSuggestions(
                 IconButton(
                     onClick = onCenterMap,
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(
                             color = MaterialTheme.colorScheme.primaryContainer,
@@ -94,6 +105,7 @@ fun SearchBarWithSuggestions(
                     Icon(
                         imageVector = Icons.Default.LocationOn,
                         contentDescription = "Centrar mapa",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
@@ -103,20 +115,37 @@ fun SearchBarWithSuggestions(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 200.dp)
-                        .padding(top = 8.dp, bottom = 8.dp)
+                        .padding(top = 8.dp)
+                        .heightIn(max = 220.dp)
                 ) {
                     items(suggestions) { prediction ->
-                        SuggestionItem(
-                            prediction = prediction,
-                            onSuggestionSelected = {
-                                onSuggestionSelected(prediction)
-                                onSearch() // Ejecuta la búsqueda después de seleccionar
-                            }
-                        )
+                        // Uso de un Card para mejorar la estética de cada sugerencia
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            shape = MaterialTheme.shapes.small,
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            SuggestionItem(
+                                prediction = prediction,
+                                onSuggestionSelected = {
+                                    onSuggestionSelected(prediction)
+                                    onSearch() // Ejecuta la búsqueda después de seleccionar
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp)
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
+
+

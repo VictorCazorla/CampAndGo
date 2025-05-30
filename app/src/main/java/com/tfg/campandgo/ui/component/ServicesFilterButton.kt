@@ -37,7 +37,7 @@ fun ToggleButtonGrid(
             onClick = { expanded = true },
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.find_icon),
+                painter = painterResource(id = R.drawable.serv_icon),
                 contentDescription = "Filter places of interest",
                 modifier = Modifier.size(28.dp),
                 tint = if (selectedButtons.isNotEmpty() || isNearbySearchActive) {

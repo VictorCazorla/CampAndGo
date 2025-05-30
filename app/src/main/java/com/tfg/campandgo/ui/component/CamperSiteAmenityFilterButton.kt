@@ -69,7 +69,7 @@ fun CamperSiteAmenityFilterButton(
             onClick = { expanded = true },
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.camping_icon),
+                painter = painterResource(id = R.drawable.van_icon),
                 contentDescription = "Filter camper sites",
                 modifier = Modifier.size(28.dp),
                 tint = if (selectedAmenities.value.isNotEmpty() || selectedAmenities.value.isNotEmpty() || showFirebasePlaces) {

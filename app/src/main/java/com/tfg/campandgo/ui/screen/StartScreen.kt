@@ -2,27 +2,29 @@ package com.tfg.campandgo.ui.screen
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tfg.campandgo.CustomButton
+import com.tfg.campandgo.R
 
-/**
- * Una función composable que representa la pantalla de inicio.
- * Proporciona opciones para que el usuario inicie sesión, acceda con Google,
- * o se registre en la aplicación CampAndGo.
- *
- * @param onLoginClick Callback que se ejecuta cuando el usuario selecciona "Login".
- * @param onGoogleSignInClick Callback que se ejecuta cuando el usuario selecciona "Login with Google".
- * @param onRegisterClick Callback que se ejecuta cuando el usuario selecciona "Register".
- */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun StartScreen(
@@ -30,55 +32,128 @@ fun StartScreen(
     onGoogleSignInClick: () -> Unit,
     onRegisterClick: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        // Título de bienvenida. Muestra un texto de introducción al usuario.
-        Text(
-            text = "Welcome to CampAndGo!",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center,
+        // Background Image
+        Image(
+            painter = painterResource(id = R.drawable.start_fondo),
+            contentDescription = "Background",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Dark overlay for better text visibility
+        Box(
             modifier = Modifier
-                .padding(bottom = 32.dp)
-                .fillMaxWidth()
-        )
-
-        //Botón para iniciar sesión. Permite al usuario acceder a la pantalla de inicio de sesión.
-        CustomButton(
-            text = "Login",
-            onClick = onLoginClick,
-            backgroundColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        //Botón para iniciar sesión con Google. Permite al usuario autenticarse utilizando su cuenta de Google.
-        CustomButton(
-            text = "Login with Google",
-            onClick = onGoogleSignInClick,
-            backgroundColor = Color(0xFF4285F4), // Azul de Google
-            contentColor = Color.White,
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.AccountCircle,
-                    contentDescription = "Google Icon",
-                    modifier = Modifier.size(24.dp)
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.3f),
+                            Color.Black.copy(alpha = 0.5f)
+                        ),
+                        startY = 0f,
+                        endY = 1000f
+                    )
                 )
-            }
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // Content
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Logo
+            Image(
+                painter = painterResource(id = R.drawable.app_icon),
+                contentDescription = "App Logo",
+                modifier = Modifier
+                    .size(150.dp)
+                    .padding(bottom = 40.dp),
+                contentScale = ContentScale.Fit
+            )
 
-        //Botón para registrarse. Permite al usuario navegar a la pantalla de registro.
-        TextButton(onClick = onRegisterClick) {
-            Text("Don't have an account? Register", color = MaterialTheme.colorScheme.primary)
+            // Welcome text
+            Text(
+                text = "Welcome to CampAndGo",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = "Your camping adventure starts here",
+                fontSize = 16.sp,
+                color = Color.White.copy(alpha = 0.9f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 40.dp)
+            )
+
+            // Login button
+            CustomButton(
+                text = "Login",
+                onClick = onLoginClick,
+                backgroundColor = Color.Gray.copy(alpha = 0.7f),
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Google login button
+            CustomButton(
+                text = "Continue with Google",
+                onClick = onGoogleSignInClick,
+                backgroundColor = Color.White,
+                contentColor = Color(0xFF757575),
+                icon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.google_icon),
+                        contentDescription = "Google Icon",
+                        modifier = Modifier.size(24.dp),
+                        tint = Color.Unspecified
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Register option
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                Text(
+                    text = "Don't have an account?",
+                    color = Color.White.copy(alpha = 0.9f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                TextButton(
+                    onClick = onRegisterClick,
+                    modifier = Modifier.padding(start = 4.dp)
+                ) {
+                    Text(
+                        text = "Register",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
         }
     }
 }

@@ -20,11 +20,11 @@ import com.tfg.campandgo.data.model.Prediction
 @Composable
 fun SuggestionItem(
     prediction: Prediction,
-    onSuggestionSelected: (Prediction) -> Unit
+    onSuggestionSelected: (Prediction) -> Unit,
+    modifier: Modifier
 ) {
     TextButton(
-        onClick = { onSuggestionSelected(prediction) },
-        modifier = Modifier.fillMaxWidth()
+        onClick = { onSuggestionSelected(prediction) }
     ) {
         Box(
             modifier = Modifier
