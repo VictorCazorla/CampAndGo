@@ -71,44 +71,16 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     var tempVisitedPlaces by remember { mutableIntStateOf(0) }
     var tempReviews by remember { mutableIntStateOf(0) }
 
+    // Profile image handling
     val profileCameraImageUri = remember { mutableStateOf<Uri?>(null) }
-
-    // For image picking
-    rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            scope.launch {
-                val downloadUrl = uploadToFirebase("profile_images", context)
-                downloadUrl?.let { url ->
-                    tempUserImage = url
-                }
-            }
-        }
-    }
-
-    rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            scope.launch {
-                val downloadUrl = uploadToFirebase("banner_images", context)
-                downloadUrl?.let { url ->
-                    tempBannerImage = url
-                }
-            }
-        }
-    }
-
     val profileImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
-                val downloadUrl = uploadToFirebase("profile_images", context)
+                val downloadUrl = uploadImageToFirebase(it, "profile_images", context)
                 downloadUrl?.let { url ->
                     tempUserImage = url
-                    userImage = url     // Updates the view immediately
                 }
             }
         }
@@ -118,37 +90,52 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            profileCameraImageUri.value?.let { _ ->
+            profileCameraImageUri.value?.let { uri ->
                 scope.launch {
-                    val downloadUrl = uploadToFirebase("profile_images", context)
+                    val downloadUrl = uploadImageToFirebase(uri, "profile_images", context)
                     downloadUrl?.let { url ->
                         tempUserImage = url
-                        userImage = url     // Updates the view immediately
                     }
                 }
             }
         }
     }
 
-    val cameraImageUri = remember { mutableStateOf<Uri?>(null) }
-
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-        if (success) {
-            tempBannerImage = cameraImageUri.value.toString()
-        }
-    }
-
-    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+    // Banner image handling
+    val bannerCameraImageUri = remember { mutableStateOf<Uri?>(null) }
+    val bannerGalleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
         uri?.let {
-            tempBannerImage = it.toString()
+            scope.launch {
+                val downloadUrl = uploadImageToFirebase(it, "banner_images", context)
+                downloadUrl?.let { url ->
+                    tempBannerImage = url
+                }
+            }
         }
     }
 
-    fun createImageFile(context: Context): Uri {
-        val file = File(context.cacheDir, "temp_image.jpg")
-        return FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+    val bannerCameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            bannerCameraImageUri.value?.let { uri ->
+                scope.launch {
+                    val downloadUrl = uploadImageToFirebase(uri, "banner_images", context)
+                    downloadUrl?.let { url ->
+                        tempBannerImage = url
+                    }
+                }
+            }
+        }
     }
 
+    // State to display dialogs
+    var showProfileImagePickerDialog by remember { mutableStateOf(false) }
+    var showBannerImagePickerDialog by remember { mutableStateOf(false) }
+
+    // Load user data
     LaunchedEffect(email) {
         try {
             val snapshot = db.collection("users").document(email).get().await()
@@ -179,7 +166,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         }
     }
 
-    // Favorite camper sites
+    // Load favorite sites
     LaunchedEffect(email) {
         scope.launch {
             try {
@@ -206,7 +193,7 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         }
     }
 
-    // Función para eliminar favoritos (nueva)
+    // Remove from favorites function
     suspend fun removeFromFavorites(email: String, siteId: String) {
         try {
             val userRef = db.collection("users").document(email)
@@ -224,16 +211,14 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         }
     }
 
+    // Save changes function
     fun saveChanges() {
         scope.launch {
             try {
-                val finalUserImage = tempUserImage.ifEmpty { userImage }
-                val finalBannerImage = tempBannerImage.ifEmpty { bannerImage }
-
                 val updates = mapOf(
                     "user_name" to tempUserName,
-                    "user_image" to finalUserImage,
-                    "banner_image" to finalBannerImage,
+                    "user_image" to tempUserImage.ifEmpty { userImage },
+                    "banner_image" to tempBannerImage.ifEmpty { bannerImage },
                     "camper_history" to tempCamperHistory,
                     "tag_list" to tempTagList,
                     "visited_places" to tempVisitedPlaces,
@@ -243,16 +228,17 @@ fun UserProfileScreen(email: String, navigator: NavController) {
 
                 db.collection("users").document(email).set(updates).await()
 
-                // Update all statuses
+                // Update all states
                 userName = tempUserName
-                userImage = finalUserImage
-                bannerImage = finalBannerImage
+                userImage = tempUserImage.ifEmpty { userImage }
+                bannerImage = tempBannerImage.ifEmpty { bannerImage }
                 camperHistory = tempCamperHistory
                 tagList = tempTagList
                 visitedPlaces = tempVisitedPlaces
                 reviews = tempReviews
 
                 isEditing = false
+                snackbarHostState.showSnackbar("Profile updated successfully")
             } catch (e: Exception) {
                 snackbarHostState.showSnackbar("Error updating profile: ${e.message}")
             }
@@ -369,69 +355,75 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-
-        // State to display the dialog
-        var showImagePickerDialog by remember { mutableStateOf(false) }
-
-        // Show selection dialog (camera or gallery)
-        if (showImagePickerDialog) {
-            AlertDialog(
-                onDismissRequest = { showImagePickerDialog = false },
-                title = { Text("Select image") },
-                text = {
-                    Column {
-                        Text("Take a photo with a camera", modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                val uri = createImageFile(context)
-                                cameraImageUri.value = uri
-                                cameraLauncher.launch(uri)
-                                showImagePickerDialog = false
-                            }
-                            .padding(8.dp))
-                        Text("Choose from gallery", modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                galleryLauncher.launch("image/*")
-                                showImagePickerDialog = false
-                            }
-                            .padding(8.dp))
-                    }
-                },
-                confirmButton = {},
-                dismissButton = {}
-            )
-        }
-
-        var showProfileImagePickerDialog by remember { mutableStateOf(false) }
-
-        // Profile picture dialog
+        // Profile image picker dialog
         if (showProfileImagePickerDialog) {
             AlertDialog(
                 onDismissRequest = { showProfileImagePickerDialog = false },
                 title = { Text("Select profile image") },
                 text = {
                     Column {
-                        Text("Take a photo with a camera", modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                val uri = createImageFile(context)
-                                profileCameraImageUri.value = uri
-                                profileCameraLauncher.launch(uri)
-                                showProfileImagePickerDialog = false
-                            }
-                            .padding(8.dp))
-                        Text("Choose from gallery", modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                profileImageLauncher.launch("image/*")
-                                showProfileImagePickerDialog = false
-                            }
-                            .padding(8.dp))
+                        Text("Take a photo with camera",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val uri = createImageFile(context)
+                                    profileCameraImageUri.value = uri
+                                    profileCameraLauncher.launch(uri)
+                                    showProfileImagePickerDialog = false
+                                }
+                                .padding(16.dp))
+
+                        Text("Choose from gallery",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    profileImageLauncher.launch("image/*")
+                                    showProfileImagePickerDialog = false
+                                }
+                                .padding(16.dp))
                     }
                 },
-                confirmButton = {},
-                dismissButton = {}
+                confirmButton = {
+                    TextButton(onClick = { showProfileImagePickerDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        // Banner image picker dialog
+        if (showBannerImagePickerDialog) {
+            AlertDialog(
+                onDismissRequest = { showBannerImagePickerDialog = false },
+                title = { Text("Select banner image") },
+                text = {
+                    Column {
+                        Text("Take a photo with camera",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val uri = createImageFile(context)
+                                    bannerCameraImageUri.value = uri
+                                    bannerCameraLauncher.launch(uri)
+                                    showBannerImagePickerDialog = false
+                                }
+                                .padding(16.dp))
+
+                        Text("Choose from gallery",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    bannerGalleryLauncher.launch("image/*")
+                                    showBannerImagePickerDialog = false
+                                }
+                                .padding(16.dp))
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showBannerImagePickerDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
             )
         }
 
@@ -448,14 +440,18 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                         .height(170.dp)
                 ) {
                     AsyncImage(
-                        model = if (isEditing) tempBannerImage.ifEmpty { "https://example.com/default_banner.jpg" }
-                        else bannerImage.ifEmpty { "https://example.com/default_banner.jpg" },
+                        model = if (isEditing) {
+                            if (tempBannerImage.isNotEmpty()) tempBannerImage
+                            else bannerImage.ifEmpty { "https://example.com/default_banner.jpg" }
+                        } else {
+                            bannerImage.ifEmpty { "https://example.com/default_banner.jpg" }
+                        },
                         contentDescription = "Banner",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxSize()
                             .clickable(enabled = isEditing) {
-                                showImagePickerDialog = true
+                                showBannerImagePickerDialog = true
                             }
                     )
 
@@ -1162,21 +1158,38 @@ fun Chip(
 }
 
 /**
- * Uploads the image to Firebase Storage
+ * Creates a temporary file for camera images
  */
-suspend fun uploadToFirebase(folder: String, context: Context): String? {
+fun createImageFile(context: Context): Uri {
+    val file = File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpg")
+    return FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.provider",
+        file
+    )
+}
+
+/**
+ * Uploads an image to Firebase Storage from a Uri
+ */
+suspend fun uploadImageToFirebase(uri: Uri, folder: String, context: Context): String? {
     return try {
         val storageRef = FirebaseStorage.getInstance().reference
         val imageRef = storageRef.child("$folder/${UUID.randomUUID()}.jpg")
+
+        // Upload the file to Firebase
+        val uploadTask = imageRef.putFile(uri).await()
+
+        // Get the download URL
         val downloadUrl = imageRef.downloadUrl.await()
 
         downloadUrl.toString().also { url ->
-            // Checks that the URL is not empty
             if (url.isEmpty()) {
                 throw Exception("Empty download URL")
             }
         }
     } catch (e: Exception) {
+        Log.e("UploadImage", "Error uploading image", e)
         Toast.makeText(context, "Error uploading image: ${e.message}", Toast.LENGTH_LONG).show()
         null
     }

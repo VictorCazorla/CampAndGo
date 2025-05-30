@@ -38,6 +38,7 @@ import com.tfg.campandgo.ui.component.NearbyPlaceItem
 import com.tfg.campandgo.ui.component.PlaceDetailsSection
 import com.tfg.campandgo.ui.component.SearchBarWithSuggestions
 import com.tfg.campandgo.ui.component.ToggleButtonGrid
+import com.tfg.campandgo.ui.theme.LocalMapStyle
 import com.tfg.campandgo.ui.viewmodel.MapsViewModel
 import java.util.Locale
 
@@ -136,15 +137,7 @@ fun MapScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        val mapStyle = remember {
-            try {
-                context.resources.openRawResource(R.raw.map_style_vintage)
-                    .bufferedReader()
-                    .use { it.readText() }
-            } catch (e: Exception) {
-                null
-            }
-        }
+        val mapStyle = LocalMapStyle.current
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -155,7 +148,7 @@ fun MapScreen(
                 minZoomPreference = 1f,
                 maxZoomPreference = 47.5f,
                 mapType = MapType.NORMAL,
-                mapStyleOptions = mapStyle?.let { MapStyleOptions(it) }
+                mapStyleOptions = mapStyle,
             ),
             uiSettings = MapUiSettings(myLocationButtonEnabled = true),
             onMapClick = { latLng ->
