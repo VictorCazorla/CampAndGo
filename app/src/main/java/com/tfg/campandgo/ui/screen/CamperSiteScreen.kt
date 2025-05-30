@@ -227,7 +227,7 @@ fun CamperSiteScreen(
                     .get()
                     .await()
 
-                val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+                val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
                 val loadedReviews = reviewSnapshots.documents.map { doc ->
                     CamperSiteReview(
                         userName = doc.getString("user_name") ?: "",
@@ -838,7 +838,7 @@ fun CamperSiteScreen(
                                         updateCamperSiteRating(site.id)
 
                                         // CamperSiteReview displayed before uploading to storage
-                                        val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+                                        val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
                                         val newReview = CamperSiteReview(
                                             userName = userName,
                                             rating = newRating,
