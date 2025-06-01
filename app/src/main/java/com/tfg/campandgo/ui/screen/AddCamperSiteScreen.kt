@@ -1,6 +1,7 @@
 package com.tfg.campandgo.ui.screen
 
 import android.content.ContentValues
+import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -258,7 +259,7 @@ fun AddCamperSiteScreen(
                         try {
                             scope.launch {
                                 try {
-                                    val (imageUrls, videoUrls) = uploadMediaToFirebaseStorage(images, videos)
+                                    val (imageUrls, videoUrls) = uploadMediaToFirebaseStorage(images, videos, context)
 
                                     val newCamperSite = CamperSite(
                                         id = UUID.randomUUID().toString(),
@@ -805,9 +806,16 @@ fun saveCamperSiteToFirestore(camperSite: CamperSite) {
  * @param images Lista de URIs de las imágenes.
  * @param videos Lista de URIs de las vídeos.
  */
+/**
+ * Sube las imágenes y los vídeos a Storage.
+ *
+ * @param images Lista de URIs de las imágenes.
+ * @param videos Lista de URIs de los vídeos.
+ */
 suspend fun uploadMediaToFirebaseStorage(
     images: List<Uri>,
-    videos: List<Uri>
+    videos: List<Uri>,
+    context: Context
 ): Pair<List<String>, List<String>> = withContext(Dispatchers.IO) {
     val storage = FirebaseStorage.getInstance().reference
     val imageUrls = mutableListOf<String>()
@@ -818,8 +826,16 @@ suspend fun uploadMediaToFirebaseStorage(
         try {
             val fileName = "camper_sites/images/${UUID.randomUUID()}.jpg"
             val fileRef = storage.child(fileName)
-            val url = fileRef.downloadUrl.await().toString()
-            imageUrls.add(url)
+
+            // Primero subir el archivo
+            val inputStream = context.contentResolver.openInputStream(uri)
+            inputStream?.let {
+                fileRef.putStream(it).await()
+                // Luego obtener la URL de descarga
+                val url = fileRef.downloadUrl.await().toString()
+                imageUrls.add(url)
+                it.close()
+            }
         } catch (e: Exception) {
             Log.e("Storage", "Error uploading image: $uri", e)
         }
@@ -830,8 +846,16 @@ suspend fun uploadMediaToFirebaseStorage(
         try {
             val fileName = "camper_sites/videos/${UUID.randomUUID()}.mp4"
             val fileRef = storage.child(fileName)
-            val url = fileRef.downloadUrl.await().toString()
-            videoUrls.add(url)
+
+            // Primero subir el archivo
+            val inputStream = context.contentResolver.openInputStream(uri)
+            inputStream?.let {
+                fileRef.putStream(it).await()
+                // Luego obtener la URL de descarga
+                val url = fileRef.downloadUrl.await().toString()
+                videoUrls.add(url)
+                it.close()
+            }
         } catch (e: Exception) {
             Log.e("Storage", "Error uploading video: $uri", e)
         }
