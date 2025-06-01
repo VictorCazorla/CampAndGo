@@ -166,7 +166,7 @@ fun LoginScreen(
                     }
                 },
                 backgroundColor = Color.Gray.copy(alpha = 0.7f),
-                contentColor = MaterialTheme.colorScheme.onPrimary,
+                contentColor = Color.White,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
