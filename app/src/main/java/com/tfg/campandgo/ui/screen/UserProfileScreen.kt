@@ -353,7 +353,6 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         // Profile image picker dialog
         if (showProfileImagePickerDialog) {
