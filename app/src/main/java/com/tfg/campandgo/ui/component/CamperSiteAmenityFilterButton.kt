@@ -52,13 +52,13 @@ fun CamperSiteAmenityFilterButton(
 
     val amenities = listOf(
         "Overnight stay" to Icons.Default.NightsStay,
-        "Wifi" to Icons.Default.Wifi,
+        "WiFi" to Icons.Default.Wifi,
         "Drinking water" to Icons.Default.WaterDrop,
         "Electricity" to Icons.Default.Bolt,
         "Shower" to Icons.Default.Shower,
         "Laundry" to Icons.Default.LocalLaundryService,
         "WC" to Icons.Default.Wc,
-        "Picnic area" to Icons.Default.Park,
+        "Picnic" to Icons.Default.Park,
         "Store" to Icons.Default.Store,
         "Restaurant" to Icons.Default.Restaurant,
         "24h" to Icons.Default.AccessTime,

@@ -214,11 +214,9 @@ fun AddCamperSiteScreen(
     // Diálogo para añadir amenidades
     var showAmenityDialog by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
-    val amenityOptions = listOf("Overnight stay", "Wifi", "Drinking water", "Electricity",
-        "Shower", "Laundry", "WC", "Picnic area",
-        "Barbecue", "Pool", "Children's area", "Parking",
-        "Store", "Restaurant", "24h", "Bicycle rental",
-        "Pet area")
+    val amenityOptions = listOf("Overnight stay", "WiFi",
+        "Drinking water", "Electricity", "Shower", "Laundry",
+        "WC", "Picnic", "Store", "Restaurant", "24h")
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -800,12 +798,6 @@ fun saveCamperSiteToFirestore(camperSite: CamperSite) {
     }
 }
 
-/**
- * SUbe las imágenes y los vídeos a Storage.
- *
- * @param images Lista de URIs de las imágenes.
- * @param videos Lista de URIs de las vídeos.
- */
 /**
  * Sube las imágenes y los vídeos a Storage.
  *
