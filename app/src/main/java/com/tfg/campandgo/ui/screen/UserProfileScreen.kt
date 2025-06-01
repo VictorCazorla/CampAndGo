@@ -60,6 +60,9 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     var tagList by remember { mutableStateOf(emptyList<String>()) }
     var visitedPlaces by remember { mutableIntStateOf(0) }
     var reviews by remember { mutableIntStateOf(0) }
+    var favoriteCamperSites by remember { mutableStateOf<List<DocumentReference>>(emptyList()) }
+    var visitedCamperSites by remember { mutableStateOf<List<String>>(emptyList()) }
+
     val favoriteSites = remember { mutableStateListOf<SimpleCamperSite>() }
 
     var isEditing by remember { mutableStateOf(false) }
@@ -70,6 +73,8 @@ fun UserProfileScreen(email: String, navigator: NavController) {
     var tempTagList by remember { mutableStateOf(emptyList<String>()) }
     var tempVisitedPlaces by remember { mutableIntStateOf(0) }
     var tempReviews by remember { mutableIntStateOf(0) }
+    var tempFavoriteCamperSites by remember { mutableStateOf<List<DocumentReference>>(emptyList()) }
+    var tempVisitedCamperSites by remember { mutableStateOf<List<String>>(emptyList()) }
 
     // Profile image handling
     val profileCameraImageUri = remember { mutableStateOf<Uri?>(null) }
@@ -149,6 +154,8 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 tagList = it["tag_list"] as? List<String> ?: emptyList()
                 visitedPlaces = (it["visited_places"] as? Long)?.toInt() ?: 0
                 reviews = (it["reviews"] as? Long)?.toInt() ?: 0
+                favoriteCamperSites = it["favorite_camper_sites"] as? List<DocumentReference> ?: emptyList()
+                visitedCamperSites = it["visited_camper_sites"] as? List<String> ?: emptyList()
 
                 // Initialize temporary values
                 tempUserName = userName
@@ -158,6 +165,8 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 tempTagList = tagList
                 tempVisitedPlaces = visitedPlaces
                 tempReviews = reviews
+                tempFavoriteCamperSites = favoriteCamperSites
+                tempVisitedCamperSites = visitedCamperSites
             }
         } catch (e: Exception) {
             scope.launch {
@@ -216,13 +225,15 @@ fun UserProfileScreen(email: String, navigator: NavController) {
         scope.launch {
             try {
                 val updates = mapOf(
-                    "user_name" to tempUserName,
+                    "user_name" to tempUserName.ifEmpty { "Anonymous" },
                     "user_image" to tempUserImage.ifEmpty { userImage },
                     "banner_image" to tempBannerImage.ifEmpty { bannerImage },
                     "camper_history" to tempCamperHistory,
                     "tag_list" to tempTagList,
                     "visited_places" to tempVisitedPlaces,
                     "reviews" to tempReviews,
+                    "favorite_camper_sites" to tempFavoriteCamperSites,
+                    "visited_camper_sites" to tempVisitedCamperSites,
                     "email" to email
                 )
 
@@ -236,6 +247,8 @@ fun UserProfileScreen(email: String, navigator: NavController) {
                 tagList = tempTagList
                 visitedPlaces = tempVisitedPlaces
                 reviews = tempReviews
+                favoriteCamperSites = tempFavoriteCamperSites
+                visitedCamperSites = tempVisitedCamperSites
 
                 isEditing = false
                 snackbarHostState.showSnackbar("Profile updated successfully")
