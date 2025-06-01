@@ -107,6 +107,13 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.firestore.FirebaseFirestore
 import com.tfg.campandgo.ui.component.LocationFetcher
 
+/**
+ * Pantalla principal que muestra la información detallada de un sitio camper específico.
+ * También permite añadir nuevas reseñas.
+ *
+ * @param camperSiteID ID único del sitio camper en Firestore, utilizado para recuperar sus datos.
+ * @param navigator Controlador de navegación utilizado para cambiar de pantalla (por ejemplo, al volver atrás o abrir el chat).
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CamperSiteScreen(
@@ -841,6 +848,7 @@ fun CamperSiteScreen(
                                         val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
                                         val newReview = CamperSiteReview(
                                             userName = userName,
+                                            userImage = userImage,
                                             rating = newRating,
                                             comment = newComment,
                                             date = formatter.format(LocalDate.now()),
@@ -932,6 +940,12 @@ fun CamperSiteScreen(
     }
 }
 
+/**
+ * Composable que representa visualmente una reseña (review) de un sitio camper.
+ *
+ * @param review Objeto de tipo [CamperSiteReview] que contiene toda la información de la reseña.
+ * @param onImageClick Callback que se ejecuta al pulsar sobre una imagen; recibe la URL de la imagen clicada.
+ */
 @Composable
 fun ReviewItem(review: CamperSiteReview, onImageClick: (String) -> Unit) {
     Row(
@@ -1013,6 +1027,17 @@ fun ReviewItem(review: CamperSiteReview, onImageClick: (String) -> Unit) {
         }
     }
 }
+
+/**
+ * Muestra un elemento multimedia, que puede ser una imagen o un vídeo, dentro de una interfaz Compose.
+ *
+ * @param mediaUrl URL del recurso multimedia (imagen o vídeo) que se desea mostrar.
+ * @param isVideo Booleano que indica si el recurso es un vídeo. Si es `true`, se mostrará una miniatura
+ *                y al hacer clic se reproducirá en pantalla completa.
+ * @param onClick Callback que se ejecuta cuando el usuario hace clic sobre una imagen.
+ *                En el caso de los vídeos, se gestiona internamente para mostrar el reproductor.
+ * @param modifier [Modifier] opcional para personalizar el estilo o comportamiento del componente desde fuera.
+ */
 @Composable
 fun MediaItem(
     mediaUrl: String,
@@ -1065,6 +1090,12 @@ fun MediaItem(
     }
 }
 
+/**
+ * Actualiza la puntuación media (`rating`) y el contador de valoraciones (`review_count`)
+ * de un sitio camper específico en Firestore.
+ *
+ * @param camperSiteId ID del sitio camper que se desea actualizar.
+ */
 fun updateCamperSiteRating(camperSiteId: String) {
     val db = FirebaseFirestore.getInstance()
 
@@ -1105,7 +1136,12 @@ fun updateCamperSiteRating(camperSiteId: String) {
         }
 }
 
-// Add this new feature to the video player
+/**
+ * Composable que muestra un reproductor de vídeo a pantalla completa utilizando ExoPlayer dentro de un diálogo.
+ *
+ * @param videoUri URI del vídeo a reproducir.
+ * @param onDismiss Función que se ejecuta al cerrar el reproductor (por ejemplo, para ocultarlo en la UI).
+ */
 @OptIn(UnstableApi::class)
 @Composable
 fun VideoPlayer(
@@ -1158,7 +1194,12 @@ fun VideoPlayer(
     }
 }
 
-// Keep the VideoThumbnail feature as it is currently
+/**
+ * Composable que genera y muestra una miniatura (thumbnail) de un vídeo a partir de su URL.
+ *
+ * @param videoUrl URL del vídeo del cual se quiere obtener la miniatura.
+ * @param modifier Modificador para aplicar estilo y comportamiento al contenedor de la miniatura.
+ */
 @Composable
 fun VideoThumbnail(videoUrl: String, modifier: Modifier = Modifier) {
     val bitmap = remember { mutableStateOf<Bitmap?>(null) }
