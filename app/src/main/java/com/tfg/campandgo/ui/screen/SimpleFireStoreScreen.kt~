@@ -1,0 +1,4 @@
+package com.tfg.campandgo.ui.screen
+
+class SimpleFireStoreScreen {
+}

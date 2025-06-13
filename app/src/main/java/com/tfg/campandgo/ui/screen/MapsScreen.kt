@@ -33,7 +33,7 @@ import com.tfg.campandgo.R
 import com.tfg.campandgo.data.model.Place
 import com.tfg.campandgo.data.model.Prediction
 import com.tfg.campandgo.ui.component.NearbyPlaceItem
-import com.tfg.campandgo.ui.component.PlaceDetailsSection
+import com.tfg.campandgo.data.model.PlaceDetailsSection
 import com.tfg.campandgo.ui.component.SearchBarWithSuggestions
 import com.tfg.campandgo.ui.component.ToggleButtonGrid
 import com.tfg.campandgo.ui.theme.LocalMapStyle

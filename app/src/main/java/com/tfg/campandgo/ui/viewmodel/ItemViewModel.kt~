@@ -1,0 +1,31 @@
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.toObjects
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+
+class SimpleFirestoreViewModel : ViewModel() {
+    private val db = FirebaseFirestore.getInstance()
+    val items = MutableStateFlow<List<Item>>(emptyList())
+
+    init {
+        getItems()
+    }
+
+    private fun getItems() {
+        viewModelScope.launch {
+            db.collection("items")
+                .get()
+                .addOnSuccessListener { result ->
+                    items.value = result.toObjects(Item::class.java)
+                }
+        }
+    }
+
+    fun addItem(item: Item) {
+        viewModelScope.launch {
+            db.collection("items").add(item)
+        }
+    }
+}

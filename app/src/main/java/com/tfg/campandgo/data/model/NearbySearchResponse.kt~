@@ -1,0 +1,52 @@
+package com.tfg.campandgo.data.model
+
+import com.google.gson.annotations.SerializedName
+
+/**
+ * Clase de datos que representa la respuesta de una búsqueda de lugares cercanos.
+ *
+ * @property results Una lista de objetos `Place` que representan los lugares encontrados.
+ * @property status Un String que indica el estado de la respuesta (por ejemplo, "OK" o "ERROR").
+ */
+data class NearbySearchResponse(
+    @SerializedName("results") val results: List<Place>,
+    @SerializedName("status") val status: String
+)
+
+/**
+ * Clase de datos que representa un lugar individual dentro de los resultados de la búsqueda.
+ *
+ * @property name El nombre del lugar.
+ * @property vicinity La dirección o área cercana del lugar (opcional).
+ * @property geometry Un objeto `GeometryN` que contiene la información geométrica del lugar (opcional).
+ * @property rating La calificación del lugar basada en reseñas (opcional).
+ * @property placeId Un identificador único para el lugar.
+ */
+data class Place(
+    @SerializedName("name") val name: String,
+    @SerializedName("vicinity") val vicinity: String?,
+    @SerializedName("geometry") val geometry: GeometryN?,
+    @SerializedName("geometry") val geometry: GeometryN?,
+    @SerializedName("rating") val rating: Double?,
+    @SerializedName("place_id") val placeId: String
+)
+
+/**
+ * Clase de datos que contiene la información geométrica de un lugar.
+ *
+ * @property location Un objeto `LocationN` que representa la ubicación geográfica del lugar.
+ */
+data class GeometryN(
+    @SerializedName("location") val location: LocationN
+)
+
+/**
+ * Clase de datos que representa una ubicación geográfica.
+ *
+ * @property lat La latitud de la ubicación.
+ * @property lng La longitud de la ubicación.
+ */
+data class LocationN(
+    @SerializedName("lat") val lat: Double,
+    @SerializedName("lng") val lng: Double
+)
