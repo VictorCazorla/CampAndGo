@@ -1,23 +1,23 @@
 # CampAndGo
 
-**Camp&Go** es una aplicación móvil desarrollada con **Jetpack Compose** para facilitar y enriquecer la experiencia de viajar.  
-Combina múltiples servicios y APIs para ofrecer herramientas útiles a viajeros y grupos, desde la planificación hasta la navegación y la comunicación durante el viaje.
+**Camp&Go** is a mobile application developed with **Jetpack Compose** to facilitate and enrich the travel experience.  
+It combines multiple services and APIs to offer useful tools for travelers and groups, from planning to navigation and communication during the trip.
 
 ---
 
-## ✨ Funcionalidades principales
+## ✨ Main Features
 
-- 🔐 **Autenticación de usuarios** con Firebase Authentication.
-- 🔍 **Búsqueda dinámica de lugares** usando Google Places API.
-- 🌦️ Consulta del **clima en tiempo real** con Weather API.
-- 🗺️ **Geocodificación de localizaciones** para mostrar puntos de interés en el mapa.
-- 🛏️ **Recomendación de lugares para pernoctar** según ubicación.
-- 📌 Visualización de **rutas y destinos** sobre el mapa.
-- 💬 **Chats grupales** para coordinación entre viajeros.
+- 🔐 **User authentication** with Firebase Authentication.
+- 🔍 **Dynamic place search** using Google Places API.
+- 🌦️ Real-time **weather updates** with Weather API.
+- 🗺️ **Geocoding locations** to display points of interest on the map.
+- 🛏️ **Recommendations for overnight stays** based on location.
+- 📌 Visualization of **routes and destinations** on the map.
+- 💬 **Group chats** for traveler coordination.
 
 ---
 
-## 🧰 Tecnologías utilizadas
+## 🧰 Technologies Used
 
 - **Kotlin** + **Jetpack Compose**
 - **Firebase** (Auth, Firestore)
@@ -28,21 +28,21 @@ Combina múltiples servicios y APIs para ofrecer herramientas útiles a viajeros
 
 ---
 
-## 🚧 Estado del proyecto
+## 🚧 Project Status
 
-Este proyecto se encuentra en desarrollo activo.  
-Se agradecen sugerencias, contribuciones y feedback de la comunidad.
-
----
-
-## 🤝 Contribuciones
-
-¡Eres bienvenido a contribuir!  
-Por favor, abre un _issue_ o _pull request_ si encuentras errores, tienes ideas o mejoras.
+This project is under active development.  
+Suggestions, contributions, and community feedback are greatly appreciated.
 
 ---
 
-## 📬 Contacto
+## 🤝 Contributions
 
-Para más información o colaboración, no dudes en contactarme.
+You are welcome to contribute!  
+Please open an _issue_ or _pull request_ if you find bugs, have ideas, or improvements.
+
+---
+
+## 📬 Contact
+
+For more information or collaboration, feel free to contact me.  
 victor.cazorla99@gmail.com
