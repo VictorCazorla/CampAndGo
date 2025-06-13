@@ -1,48 +1,29 @@
-# CampAndGo
+# 🧪 Camp&Go - Development Branch (dev)
 
-**Camp&Go** is a mobile application developed with **Jetpack Compose** to facilitate and enrich the travel experience.  
-It combines multiple services and APIs to offer useful tools for travelers and groups, from planning to navigation and communication during the trip.
-
----
-
-## ✨ Main Features
-
-- 🔐 **User authentication** with Firebase Authentication.
-- 🔍 **Dynamic place search** using Google Places API.
-- 🌦️ Real-time **weather updates** with Weather API.
-- 🗺️ **Geocoding locations** to display points of interest on the map.
-- 🛏️ **Recommendations for overnight stays** based on location.
-- 📌 Visualization of **routes and destinations** on the map.
-- 💬 **Group chats** for traveler coordination.
+This document is intended for developers and collaborators actively working on the **dev** branch of the **Camp&Go** project. Here you will find technical details, setup instructions, internal conventions, and necessary dependencies to effectively contribute to the project.
 
 ---
 
-## 🧰 Technologies Used
+## ⚙️ Environment Setup
 
-- **Kotlin** + **Jetpack Compose**
-- **Firebase** (Auth, Firestore)
-- **Google Maps SDK**
-- **Google Places API**
-- **Weather API**
-- **Geocoder**
+### Requirements
 
----
+- **Android Studio Giraffe or higher**  
+- **JDK 17**  
+- Minimum SDK: API 24 (Android 7.0)  
+- Internet connection (for Firebase dependencies and external APIs)
 
-## 🚧 Project Status
+### API Keys and Sensitive Configuration
 
-This project is under active development.  
-Suggestions, contributions, and community feedback are greatly appreciated.
+To protect sensitive data, **files such as google-services.json and secrets.xml are not included in the repository**.
 
----
+#### Steps to configure locally:
 
-## 🤝 Contributions
+1. Create the file `app/google-services.json` from the [Firebase Console](https://console.firebase.google.com/).  
+2. Manually create the file `app/src/main/res/values/secrets.xml` with the following content:
 
-You are welcome to contribute!  
-Please open an _issue_ or _pull request_ if you find bugs, have ideas, or improvements.
-
----
-
-## 📬 Contact
-
-For more information or collaboration, feel free to contact me.  
-victor.cazorla99@gmail.com
+```xml
+<resources>
+    <string name="google_maps_key">YOUR_GOOGLE_MAPS_KEY</string>
+    <string name="open_weather_key">YOUR_OPENWEATHER_KEY</string>
+</resources>
