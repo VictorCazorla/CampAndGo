@@ -1,29 +1,48 @@
-# 🧪 Camp&Go - Rama de desarrollo (`dev`)
+# CampAndGo
 
-Este documento está destinado a desarrolladores y colaboradores que trabajan activamente en la rama `dev` del proyecto **Camp&Go**. Aquí encontrarás detalles técnicos, instrucciones de configuración, convenciones internas y dependencias necesarias para contribuir de manera efectiva al proyecto.
+**Camp&Go** is a mobile application developed with **Jetpack Compose** to facilitate and enrich the travel experience.  
+It combines multiple services and APIs to offer useful tools for travelers and groups, from planning to navigation and communication during the trip.
 
 ---
 
-## ⚙️ Configuración del entorno
+## ✨ Main Features
 
-### Requisitos
+- 🔐 **User authentication** with Firebase Authentication.
+- 🔍 **Dynamic place search** using Google Places API.
+- 🌦️ Real-time **weather updates** with Weather API.
+- 🗺️ **Geocoding locations** to display points of interest on the map.
+- 🛏️ **Recommendations for overnight stays** based on location.
+- 📌 Visualization of **routes and destinations** on the map.
+- 💬 **Group chats** for traveler coordination.
 
-- **Android Studio Giraffe o superior**  
-- **JDK 17**  
-- SDK mínimo: `API 24 (Android 7.0)`  
-- Conexión a Internet (para dependencias de Firebase y APIs externas)
+---
 
-### Claves API y configuración sensible
+## 🧰 Technologies Used
 
-Para proteger los datos sensibles, **no incluimos archivos como `google-services.json` ni `secrets.xml` en el repositorio**.
+- **Kotlin** + **Jetpack Compose**
+- **Firebase** (Auth, Firestore)
+- **Google Maps SDK**
+- **Google Places API**
+- **Weather API**
+- **Geocoder**
 
-#### Pasos para configurar localmente:
+---
 
-1. Crear el archivo `app/google-services.json` desde [Firebase Console](https://console.firebase.google.com/).  
-2. Crear manualmente el archivo `app/src/main/res/values/secrets.xml` con este contenido:
+## 🚧 Project Status
 
-```xml
-<resources>
-    <string name="google_maps_key">TU_CLAVE_GOOGLE_MAPS</string>
-    <string name="open_weather_key">TU_CLAVE_OPENWEATHER</string>
-</resources>
+This project is under active development.  
+Suggestions, contributions, and community feedback are greatly appreciated.
+
+---
+
+## 🤝 Contributions
+
+You are welcome to contribute!  
+Please open an _issue_ or _pull request_ if you find bugs, have ideas, or improvements.
+
+---
+
+## 📬 Contact
+
+For more information or collaboration, feel free to contact me.  
+victor.cazorla99@gmail.com
